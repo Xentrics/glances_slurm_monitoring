@@ -8,10 +8,10 @@
 # This should be set to the true root of the project
 # Currently, it is assumed that this RServer files are put to /project_root/src/RServer/
 PROJECT_ROOT := $(shell realpath $(shell pwd)/../)
+SOURCE_DIR := $(shell pwd)
 # Update to current user ID and GROUP
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
-SOURCE_DIR := $(shell pwd)
 
 # external server port used to access rstudio-server
 DOCKER_ENV_PORT := 16930
@@ -33,6 +33,7 @@ define DOCKER_RUN_ARGS
 	--volume /opt/ngs2/:/opt/ngs2 \
 	--volume $(SOURCE_DIR)/Rprofile.R:/usr/local/lib/R/etc/Rprofile.site \
 	--volume $(PROJECT_ROOT):/analysis \
+	--volume $(SOURCE_DIR)/welcome.html:/srv/shiny-server/index.html \
 	--hostname $(shell hostname)
 endef
 
