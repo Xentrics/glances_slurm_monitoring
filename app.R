@@ -22,13 +22,6 @@ ui <-
 
 
 # server.R ----
-message(paste(dir("/"), sep="\n"))
-message("<<<>>>")
-message(paste(dir("/sbidata/"), sep="\n"))
-message("<<<>>>")
-message(paste(dir("/sbidata/glances/"), sep="\n"))
-message("<<<>>>")
-
 message("Looking for server files")
 files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
 message(sprintf("Found %i, setting up file readers", length(files)))
@@ -56,20 +49,22 @@ server <- function(input, output) {
     })
   })
 
+  # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
   plots <- reactive({
     map2(df.list, names(df.list), function(df, name) {
       if (nrow(df()) > 0) {
         ggplot(df(), aes(x = entry)) +
           geom_path(aes(y = percentage, color = type), size = 2) +
           scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
-          scale_x_continuous(expand = expansion(0)) +
+          scale_x_continuous(expand = expansion(mult = c(0.015, 0)), n.breaks = 5, labels = sprintf("-min %i", 10*(4:0))) +
           scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name) +
-          theme_bw(base_size = 12) +
-          theme(panel.grid.minor = element_blank(),
+          labs(y = "% usage", x = "") +
+          theme_bw(base_size = 20) +
+          theme(title = element_text(face="bold"),
+                panel.grid.minor = element_blank(),
                 panel.grid.major.x = element_blank(),
-                axis.text.x = element_blank(),
-                axis.ticks.x = element_blank(),
+                axis.text.x = element_text(color = "black", angle = 45, vjust = 1, hjust = 1),
                 axis.text.y = element_text(color = "black"))
       } else {
         ggplot() + ggtitle(name)
@@ -77,7 +72,7 @@ server <- function(input, output) {
     })
   })
 
-  output$myplot <- renderPlot(patchwork::wrap_plots(plots(), guides = "collect"))
+  output$myplot <- renderPlot(wrap_plots(plots()) + plot_layout(guides = "collect") & theme(legend.position = 'top'))
 }
 
 # Run the app ----
