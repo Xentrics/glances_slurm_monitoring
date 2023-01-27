@@ -23,29 +23,35 @@ DOCKER_REGISTRY := sbi-registry.hki-jena.de
 DOCKER_REGISTRY_USER := seelbind
 DOCKER_NAMESPACE := seelbind
 # DOCKER IMAGE PATH IN REGISTRY
-DOCKER_REPOSITORY := $(shell echo sbi-registry.hki-jena.de/seelbind/dockerfiles | sed 's/\/\//\//g')
-DOCKER_TAG := RServer_R4.2.1_2022_07
+DOCKER_REPOSITORY := rocker/shiny
+DOCKER_TAG := 4.2
 DOCKER_IMAGE := $(DOCKER_REPOSITORY):$(DOCKER_TAG)
 
 
 define DOCKER_RUN_ARGS
-	--volume $(PROJECT_ROOT):/analysis \
 	--volume /sbidata:/sbidata \
-	--volume $(SOURCE_DIR)/profile:/etc/profile \
+	--volume /opt/ngs2/:/opt/ngs2 \
 	--volume $(SOURCE_DIR)/Rprofile.R:/usr/local/lib/R/etc/Rprofile.site \
-	-e USERID=$(USER_ID) \
-	-e GROUPID=$(GROUP_ID) \
+	--volume $(PROJECT_ROOT):/analysis \
 	--hostname $(shell hostname)
 endef
 
-# Run docker container. This will also run the analysis by default
-run:
-	docker run $(DOCKER_RUN_ARGS) $(CUSTOM_NAME) make analyse
+define DOCKER_RUN_ARGS_ENV
+	-e USERID=$(USER_ID) \
+	-e GROUPID=$(GROUP_ID) \
+	-e DISABLE_AUTH=true
+endef
 
-# Main entry point for the analysis
-analyse: 
-	@echo "Start anlysis at $(shell hostname)"
-	Rscript src/run.R 2>&1 | tee log/analyze.log
+# Start shiny server
+# All shiny apps need to be linked under /srv/shiny-server
+shiny:
+	docker run -d --rm \
+		-p 4444:3838 \
+		--volume $(PROJECT_ROOT):/srv/shiny-server/glances \
+		--name $(DOCKER_CONTAINER_NAME) \
+		$(DOCKER_RUN_ARGS) \
+		rocker/shiny-verse:4.1
+
 
 # Start docker container for interactive analysis
 # - detached RStudio Server
@@ -53,19 +59,12 @@ analyse:
 # - user rstudio as the analysis root directory as home
 env:
 	docker run -d --rm \
-		-e PASSWORD=tesseract \
 		-p $(DOCKER_ENV_PORT):8787 \
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
-		$(DOCKER_IMAGE) \
+		$(DOCKER_RUN_ARGS_ENV) \
+		rocker/verse:4.1 \
 		/init && \
 		echo SUCCESS: Interactive analysis container $(DOCKER_CONTAINER_NAME) started at http://$(shell hostname):$(DOCKER_ENV_PORT)
 
-login:
-	docker login \
-		-u $(DOCKER_REGISTRY_USER) \
-		$(DOCKER_REGISTRY)
-
-pull:
-	docker pull $(DOCKER_IMAGE)
 

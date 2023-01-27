@@ -2,6 +2,7 @@
 library(shiny)  # Required to run any Shiny app
 library(ggplot2)  # For creating pretty plots
 library(tidyverse)  # For filtering and manipulating data
+library(patchwork)
 
 gg_color_hue <- function(n) {
   hues = seq(15, 375, length = n + 1)
@@ -11,7 +12,7 @@ gg_color_hue <- function(n) {
 # ui.R ----
 ui <-
   fillPage(
-    titlePanel("MDB Servers"),
+    titlePanel("MBD Servers"),
     # textOutput("mytext"),
     plotOutput("myplot", height = "90%")
   )
@@ -19,17 +20,28 @@ ui <-
 
 
 # server.R ----
+message(paste(dir("/"), sep="\n"))
+message("<<<>>>")
+message(paste(dir("/sbidata/"), sep="\n"))
+message("<<<>>>")
+message(paste(dir("/sbidata/glances/"), sep="\n"))
+message("<<<>>>")
+
+message("Looking for server files")
 files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
+message(sprintf("Found %i, setting up file readers", length(files)))
 fileReaders <- map(files, ~ reactiveFileReader(60000, NULL, .x, readFunc = read_csv)) %>%
    set_names(., files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1"))
-server <- function(input, output, session) {
+message("Servers are: %s", names(fileReaders))
+
+server <- function(input, output) {
 
   df.list <- map(fileReaders, function(fr) {
     reactive({
       tryCatch({
         fr() %>%
           slice_tail(n = 100) %>%
-          mutate(entry = nrow(.):1, .before = 1) %>%
+          mutate(entry = 1:nrow(.), .before = 1) %>%
           mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
           mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
           select(entry, cpu.total, mem.percent, load.min5, load.min15) %>%
@@ -67,4 +79,4 @@ server <- function(input, output, session) {
 }
 
 # Run the app ----
-shinyApp(ui = ui, server = server, options = list("port" = 7777))
+shinyApp(ui = ui, server = server)
