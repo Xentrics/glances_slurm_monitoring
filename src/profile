@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+#
+# The systemwide initialization file, executed for login shells
+# mounted at /etc/profile
+#
