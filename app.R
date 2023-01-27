@@ -12,8 +12,10 @@ gg_color_hue <- function(n) {
 # ui.R ----
 ui <-
   fillPage(
+    tags$style(type="text/css",
+      ".recalculating {opacity: 1.0;}"
+    ),
     titlePanel("MBD Servers"),
-    # textOutput("mytext"),
     plotOutput("myplot", height = "90%")
   )
 
