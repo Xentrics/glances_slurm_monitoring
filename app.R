@@ -12,11 +12,32 @@ gg_color_hue <- function(n) {
 # ui.R ----
 ui <-
   fillPage(
+
+    # remove shading during update
     tags$style(type="text/css",
       ".recalculating {opacity: 1.0;}"
     ),
-    titlePanel("MBD Servers"),
-    plotOutput("myplot", height = "90%")
+
+    # update title bar look
+    tags$style(
+      HTML(
+        "#big-heading{
+        padding-left:15px; padding-top:15px; padding-bottom:15px;
+        color: white; background: #3475b4;
+        box-shadow: 2px 2px 2px 2px grey;}"
+      )
+    ),
+
+    # Title
+    titlePanel(
+      title = h1(id="big-heading", "MBD Servers"),
+      # Application Icon (for web-browser tab)
+      tags$head(tags$link(rel = "icon", type = "image/png", href = "logo_128.png"),
+                tags$title("MBD Servers"))
+    ),
+
+    # Server Performance Graphs
+    plotOutput("usage_graphs", height = "90%")
   )
 
 
@@ -76,7 +97,7 @@ server <- function(input, output) {
     })
   })
 
-  output$myplot <- renderPlot(wrap_plots(plots()) + plot_layout(guides = "collect") & theme(legend.position = 'top'))
+  output$usage_graphs <- renderPlot(wrap_plots(plots()) + plot_layout(guides = "collect") & theme(legend.position = 'left'))
 }
 
 # Run the app ----
