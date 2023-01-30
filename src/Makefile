@@ -17,6 +17,7 @@ GROUP_ID := $(shell id -g)
 DOCKER_ENV_PORT := 16930
 # set a custom name for the running container
 DOCKER_CONTAINER_NAME := Shiny_Glances
+DOCKER_ENV_NAME := Shiny_Glances_Env
 
 # only required if you are not yet logged into docker
 DOCKER_REGISTRY := sbi-registry.hki-jena.de
@@ -61,7 +62,7 @@ shiny:
 env:
 	docker run -d --rm \
 		-p $(DOCKER_ENV_PORT):8787 \
-		--name $(DOCKER_CONTAINER_NAME) \
+		--name $(DOCKER_ENV_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		$(DOCKER_RUN_ARGS_ENV) \
 		rocker/verse:4.1 \
