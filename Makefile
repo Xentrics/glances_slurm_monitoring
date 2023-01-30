@@ -7,8 +7,8 @@
 
 # This should be set to the true root of the project
 # Currently, it is assumed that this RServer files are put to /project_root/src/RServer/
-PROJECT_ROOT := $(shell realpath $(shell pwd)/../)
-SOURCE_DIR := $(shell pwd)
+PROJECT_ROOT := $(shell realpath $(shell pwd))
+SOURCE_DIR := $(shell realpath $(shell pwd))/src
 # Update to current user ID and GROUP
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
@@ -23,10 +23,6 @@ DOCKER_ENV_NAME := Shiny_Glances_Env
 DOCKER_REGISTRY := sbi-registry.hki-jena.de
 DOCKER_REGISTRY_USER := seelbind
 DOCKER_NAMESPACE := seelbind
-# DOCKER IMAGE PATH IN REGISTRY
-DOCKER_REPOSITORY := rocker/shiny
-DOCKER_TAG := 4.2
-DOCKER_IMAGE := $(DOCKER_REPOSITORY):$(DOCKER_TAG)
 
 
 define DOCKER_RUN_ARGS
@@ -52,7 +48,7 @@ shiny:
 		--volume $(PROJECT_ROOT):/srv/shiny-server/glances \
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
-		rocker/shiny-verse:4.1
+		shiny-verse:4.1_SBI
 
 
 # Start docker container for interactive analysis
