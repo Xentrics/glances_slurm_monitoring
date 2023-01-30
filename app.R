@@ -25,9 +25,9 @@ ui <-
 message("Looking for server files")
 files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
 message(sprintf("Found %i, setting up file readers", length(files)))
-fileReaders <- map(files, ~ reactiveFileReader(60000, NULL, .x, readFunc = read_csv)) %>%
+fileReaders <- map(files, ~ reactiveFileReader(60000, NULL, .x, readFunc = read.csv)) %>%
    set_names(., files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1"))
-message("Servers are: %s", names(fileReaders))
+message(sprintf("Servers are: %s\n", names(fileReaders)))
 
 server <- function(input, output) {
 
@@ -35,13 +35,15 @@ server <- function(input, output) {
     reactive({
       tryCatch({
         fr() %>%
-          slice_tail(n = 100) %>%
+          # TODO: instead of tail, load them all (but see below)
+          slice_tail(n = 120) %>%
           mutate(entry = 1:nrow(.), .before = 1) %>%
+          mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
           mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
           mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
-          select(entry, cpu.total, mem.percent, load.min5, load.min15) %>%
+          select(entry, minute, cpu.total, mem.percent, load.min5, load.min15) %>%
           rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
-          pivot_longer(-entry, names_to = "type", values_to = "percentage") %>%
+          pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
           mutate(type = fct_inorder(type) %>% fct_rev())
       }, error = function(e) {
         data.frame()
@@ -53,13 +55,15 @@ server <- function(input, output) {
   plots <- reactive({
     map2(df.list, names(df.list), function(df, name) {
       if (nrow(df()) > 0) {
-        ggplot(df(), aes(x = entry)) +
+        ggplot(df(), aes(x = minute)) +
           geom_path(aes(y = percentage, color = type), size = 2) +
           scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
-          scale_x_continuous(expand = expansion(mult = c(0.015, 0)), n.breaks = 5, labels = sprintf("-min %i", 10*(4:0))) +
+          # TODO: update the labels based on the number of entries
+          #scale_x_continuous(expand = expansion(mult = c(0.015, 0)), trans = "reverse", n.breaks = 5, labels = sprintf("-min %i", 10*(4:0))) +
+          scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 6) +
           scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name) +
-          labs(y = "% usage", x = "") +
+          labs(y = "% usage", x = "ago [min]") +
           theme_bw(base_size = 20) +
           theme(title = element_text(face="bold"),
                 panel.grid.minor = element_blank(),
