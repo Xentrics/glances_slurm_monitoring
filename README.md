@@ -16,6 +16,13 @@
 - welcome.html is used if only the server:port is entered in web-browser
 
 
+## Thoughts
+- to decrease the load on the server, it would be best to compute the image just once in a separate job
+  - therefore, the data loading & plot building could be done using a cron job
+  - the shiny server would only have a reactiveFileReader on the resulting ggplot
+  - this would also make the integration of other information (e.g., max server user) easier
+
+
 ## TODO
 - [x] create graphs
 - [x] make readable x-axis
