@@ -1,7 +1,7 @@
 - [x] create graphs
 - [x] make readable x-axis
 - [x] make standalone web-server
-- [ ] add web-page icon in browser bar
+- [x] add web-page icon in browser bar
 - [ ] make switch between SLURM and non-SLURM servers
 - [ ] use a single file for reading server usage
 - [ ] display a warning if usage of a server is too high
