@@ -45,10 +45,19 @@ ui <-
 # server.R ----
 message("Looking for server files")
 files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
+# ignore SLURM nodes; only the first two additional nodes get exposed
+files <- files %>% discard(str_detect(files, "nodeSBI"))
+files <- c(files %>% discard(str_detect(files, "nodesbi")),
+           files %>% keep(str_detect(files, "nodesbi")))
+
+# Create reactivate file readers for continues updates
 message(sprintf("Found %i, setting up file readers", length(files)))
 fileReaders <- map(files, ~ reactiveFileReader(60000, NULL, .x, readFunc = read.csv)) %>%
    set_names(., files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1"))
+
 message(sprintf("Servers are: %s\n", names(fileReaders)))
+
+
 
 server <- function(input, output) {
 
