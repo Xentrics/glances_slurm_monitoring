@@ -9,6 +9,7 @@ gg_color_hue <- function(n) {
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
+
 # ui.R ----
 ui <-
   fillPage(
@@ -58,14 +59,25 @@ fileReaders <- map(files, ~ reactiveFileReader(60000, NULL, .x, readFunc = read.
 message(sprintf("Servers are: %s\n", names(fileReaders)))
 
 
+# Reorder Position of Server Plots
+server_order <- c('ikarus', 'daidalos', 'kottos', 'agaricus', 'amantia', 'russula', 'nodesbi01', 'nodesbi02')
+if (any(!names(fileReaders) %in% server_order)) {
+  warning("One or more servers are not in 'server_order'. Not chaning order ...")
+} else {
+  # maybe not all servers are being watched
+  server_order <- server_order[server_order %in% names(fileReaders)]
+  # reorder
+  fileReaders <- fileReaders[server_order]
+}
 
+
+# Server Compute
 server <- function(input, output) {
 
   df.list <- map(fileReaders, function(fr) {
     reactive({
       tryCatch({
         fr() %>%
-          # TODO: instead of tail, load them all (but see below)
           slice_tail(n = 120) %>%
           mutate(entry = 1:nrow(.), .before = 1) %>%
           mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
@@ -88,8 +100,6 @@ server <- function(input, output) {
         ggplot(df(), aes(x = minute)) +
           geom_path(aes(y = percentage, color = type), size = 2) +
           scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
-          # TODO: update the labels based on the number of entries
-          #scale_x_continuous(expand = expansion(mult = c(0.015, 0)), trans = "reverse", n.breaks = 5, labels = sprintf("-min %i", 10*(4:0))) +
           scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 6) +
           scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name) +
