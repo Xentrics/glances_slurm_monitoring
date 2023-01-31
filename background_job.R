@@ -1,7 +1,9 @@
 #== Packages ----
 library(ggplot2)  # For creating pretty plots
-library(tidyverse)  # For filtering and manipulating data
-library(patchwork)
+library(dplyr)  # For filtering and manipulating data
+library(stringr)
+library(purrr)
+library(forcats)
 
 #== Description====
 # This script should be run every 1 minute using cron
@@ -61,7 +63,7 @@ df.list <- map(df.list, function(df) {
       mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
       select(entry, minute, cpu.total, mem.percent, load.min5, load.min15) %>%
       rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
-      pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
+      tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
       mutate(type = fct_inorder(type) %>% fct_rev())
   }, error = function(e) {
     data.frame()
@@ -77,8 +79,9 @@ df.list <- map(df.list, function(df) {
 #' patchwork: render each plot individually & concatenate using patchwork. Quite slow, but robust against missing data.
 #' facet: render all plots as one ggplot using facet over server. Faster, but failed servers may disappear
 calc_graph <- function(df.list, use_type) {
+  
   if (use_type == "patchwork") {
-    
+    require(patchwork)
     plots <- map2(df.list, names(df.list), function(df, name) {
       if (nrow(df) > 0) {
         ggplot(df, aes(x = minute)) +
@@ -123,7 +126,7 @@ calc_graph <- function(df.list, use_type) {
               axis.text.x = element_text(color = "black", angle = 45, vjust = 1, hjust = 1),
               axis.text.y = element_text(color = "black"))
     } else {
-      ggplot() + ggtitle(name)
+      ggplot()
     }
   }
 }
