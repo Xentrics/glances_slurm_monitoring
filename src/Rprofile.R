@@ -11,6 +11,7 @@
 
 # force R to use analysis directory as home
 Sys.setenv(HOME = "/analysis")
+Sys.setenv(TZ="Europe/Berlin")
 
 # set repository
 assign("CRAN_repo", "https://packagemanager.rstudio.com/all/__linux__/focal/2022-07-05+Y3JhbiwyOjQ1MjYyMTU7RTRCNjFBNjg", envir=globalenv())
