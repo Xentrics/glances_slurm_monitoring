@@ -1,16 +1,22 @@
-# Packages ----
+#== Packages ----
 library(shiny)  # Required to run any Shiny app
 library(ggplot2)  # For creating pretty plots
-library(tidyverse)  # For filtering and manipulating data
-library(patchwork)
+library(dplyr)  # For filtering and manipulating data
+library(stringr)
+library(purrr)
+library(forcats)
 
 gg_color_hue <- function(n) {
   hues = seq(15, 375, length = n + 1)
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
+#== Description====
+# This script should be run within a shiny-verse docker container
+# background_job.R should be run routinely (e.g., every minute) in the background
 
-# ui.R ----
+
+#== UI (client) ====
 ui <-
   fillPage(
 
@@ -37,87 +43,60 @@ ui <-
                 tags$title("MBD Servers"))
     ),
 
+    textOutput("update_text"),
+
     # Server Performance Graphs
-    plotOutput("usage_graphs", height = "90%")
+    plotOutput("usage_graphs", height = "80%")
   )
 
 
 
-# server.R ----
-message("Looking for server files")
-files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
-# ignore SLURM nodes; only the first two additional nodes get exposed
-files <- files %>% discard(str_detect(files, "nodeSBI"))
-files <- c(files %>% discard(str_detect(files, "nodesbi")),
-           files %>% keep(str_detect(files, "nodesbi")))
+#== Server ====
+#== Persistent data ----
 
-# Create reactivate file readers for continues updates
-message(sprintf("Found %i, setting up file readers", length(files)))
-fileReaders <- map(files, ~ reactiveFileReader(60000, NULL, .x, readFunc = read.csv)) %>%
-   set_names(., files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1"))
-
-message(sprintf("Servers are: %s\n", names(fileReaders)))
-
-
-# Reorder Position of Server Plots
-server_order <- c('ikarus', 'daidalos', 'kottos', 'agaricus', 'amantia', 'russula', 'nodesbi01', 'nodesbi02')
-if (any(!names(fileReaders) %in% server_order)) {
-  warning("One or more servers are not in 'server_order'. Not chaning order ...")
-} else {
-  # maybe not all servers are being watched
-  server_order <- server_order[server_order %in% names(fileReaders)]
-  # reorder
-  fileReaders <- fileReaders[server_order]
+get_current_time <- function() {
+  format(Sys.time(), "%b %d %H:%M")
 }
 
+# Create reactivate file readers that loads pre-compute ggplot objects
+graph_file <- file.path(getwd(), "data/graph.rds")
+if (!file.exists(graph_file)) stop("Graph file not found! Did you run background_job.R?")
 
-# Server Compute
+safe.readRDS <- possibly(readRDS, NULL)
+gg.graph <- reactiveFileReader(60000, NULL, filePath = graph_file, readFunc = safe.readRDS)
+
+# keeps the last valid plot
+last_plot <- reactiveValues(plot = NULL)
+
+
+#== Session data ----
 server <- function(input, output) {
 
-  df.list <- map(fileReaders, function(fr) {
-    reactive({
-      tryCatch({
-        fr() %>%
-          slice_tail(n = 120) %>%
-          mutate(entry = 1:nrow(.), .before = 1) %>%
-          mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
-          mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
-          mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
-          select(entry, minute, cpu.total, mem.percent, load.min5, load.min15) %>%
-          rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
-          pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
-          mutate(type = fct_inorder(type) %>% fct_rev())
-      }, error = function(e) {
-        data.frame()
+  # shows the last render update
+  update_text <- reactiveValues(uptext = paste("Last Update:", get_current_time()))
+
+  # loading of data may fail (resulting in a white flash) - so we need to capture this
+  # here, we safe the last rendered plot
+  # if gg.graph is broken, the last rendered plot will be used instead
+  # observere is required to make the if-else clause work
+  observe({
+    if (!is.null(gg.graph())) {
+      output$usage_graphs <- renderPlot({
+        g <- gg.graph()
+        update_text$uptext <- paste("Last Update:", get_current_time())
+        last_plot$plot <- g
+        g
       })
-    })
+    } else {
+      #message("Incomplete data.") # use only during debug
+      output$usage_graphs <- renderPlot(last_plot$plot)
+    }
   })
 
-  # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
-  plots <- reactive({
-    map2(df.list, names(df.list), function(df, name) {
-      if (nrow(df()) > 0) {
-        ggplot(df(), aes(x = minute)) +
-          geom_path(aes(y = percentage, color = type), size = 2) +
-          scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
-          scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 6) +
-          scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
-          ggtitle(name) +
-          labs(y = "% usage", x = "ago [min]") +
-          theme_bw(base_size = 20) +
-          theme(title = element_text(face="bold"),
-                panel.grid.minor = element_blank(),
-                panel.grid.major.x = element_blank(),
-                axis.text.x = element_text(color = "black", angle = 45, vjust = 1, hjust = 1),
-                axis.text.y = element_text(color = "black"))
-      } else {
-        ggplot() + ggtitle(name)
-      }
-    })
-  })
-
-  output$usage_graphs <- renderPlot(wrap_plots(plots()) + plot_layout(guides = "collect") & theme(legend.position = 'left'))
+  # use g to trigger text update
+  output$update_text <- renderText(update_text$uptext)
 }
 
-# Run the app ----
+
+#== Run the app ----
 shinyApp(ui = ui, server = server)

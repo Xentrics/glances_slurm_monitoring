@@ -19,6 +19,7 @@ gg_color_hue <- function(n) {
 #== Find & load glances measurement data ====
 message("Looking for server files")
 files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
+
 # ignore SLURM nodes; only the first two additional nodes get exposed
 files <- files %>% discard(str_detect(files, "nodeSBI"))
 files <- c(files %>% discard(str_detect(files, "nodesbi")),
@@ -61,7 +62,7 @@ df.list <- map(df.list, function(df) {
       mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
       #mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
       mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
-      select(entry, minute, cpu.total, mem.percent, load.min5, load.min15) %>%
+      select(entry, minute, cpu.total, mem.percent, load.min15) %>%
       rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
       tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
       mutate(type = fct_inorder(type) %>% fct_rev())
@@ -86,7 +87,8 @@ calc_graph <- function(df.list, use_type) {
       if (nrow(df) > 0) {
         ggplot(df, aes(x = minute)) +
           geom_path(aes(y = percentage, color = type), size = 1.5) +
-          scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
+          #scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
+          scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38")) +
           scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
           scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name) +
@@ -113,7 +115,8 @@ calc_graph <- function(df.list, use_type) {
         ggplot(aes(x = minute)) +
         facet_wrap(~ Server, scales = "free_x") +
         geom_path(aes(y = percentage, color = type), size = 1.5) +
-        scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
+        #scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
+        scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38")) +
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
         scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
