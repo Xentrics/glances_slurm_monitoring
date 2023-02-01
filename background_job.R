@@ -79,7 +79,7 @@ df.list <- map(df.list, function(df) {
 #' patchwork: render each plot individually & concatenate using patchwork. Quite slow, but robust against missing data.
 #' facet: render all plots as one ggplot using facet over server. Faster, but failed servers may disappear
 calc_graph <- function(df.list, use_type) {
-  
+
   if (use_type == "patchwork") {
     require(patchwork)
     plots <- map2(df.list, names(df.list), function(df, name) {
@@ -101,10 +101,10 @@ calc_graph <- function(df.list, use_type) {
         ggplot() + ggtitle(name)
       }
     })
-    
+
     wrap_plots(plots) + plot_layout(guides = "collect") & theme(legend.position = 'left')
   } else if (use_type == "facet") {
-    
+
     # merge all measurements
     df <- bind_rows(df.list, .id = "Server")
     if (nrow(df) > 0) {
@@ -146,18 +146,18 @@ saveRDS(usage_graphs, "data/graph.rds")
 # time.patch <- rbenchmark::benchmark(print(calc_graph(df.list = df.list, use_type = "patchwork")),
 #                                     replications = 5,
 #                                     columns = c("test", "replications", "elapsed", "relative", "user.self", "sys.self"))
-# 
+#
 # # The facet approach is around 4x faster (8-9 seconds)
 # time.facet <- rbenchmark::benchmark(print(calc_graph(df.list = df.list, use_type = "facet")),
 #                                     replications = 5,
 #                                     columns = c("test", "replications", "elapsed", "relative", "user.self", "sys.self"))
-# 
-# 
+#
+#
 # # 22.7 seconds
 # time.patch <- rbenchmark::benchmark(print(readRDS("data/graph.rds")),
 #                                     replications = 5,
 #                                     columns = c("test", "replications", "elapsed", "relative", "user.self", "sys.self"))
-# 
+#
 # # The facet approach is around 4x faster (8-9 seconds)
 # # 10 seconds
 # time.facet <- rbenchmark::benchmark(print(readRDS("data/graph.rds")),
