@@ -18,7 +18,7 @@ gg_color_hue <- function(n) {
 
 #== Find & load glances measurement data ====
 message("Looking for server files")
-files <- list.files(path = "/sbidata/glances/", pattern = "glances", full.names = TRUE)
+files <- list.files(path = "/opt/ngs2/glances/", pattern = "glances", full.names = TRUE)
 
 # ignore SLURM nodes; only the first two additional nodes get exposed
 files <- files %>% discard(str_detect(files, "nodeSBI"))
