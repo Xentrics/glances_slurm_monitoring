@@ -10,7 +10,7 @@ gg_color_hue <- function(n) {
 }
 
 
-safe.read.csv <- possibly(read.csv, otherwise = NULL)
+safe.read.csv <- purrr::possibly(read.csv, otherwise = NULL)
 
 
 #' Parse top user file and return a string describing top users
