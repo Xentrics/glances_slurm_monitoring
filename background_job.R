@@ -18,34 +18,34 @@ gg_color_hue <- function(n) {
 
 #== Find & load glances measurement data ====
 message("Looking for server files")
-files <- list.files(path = "/opt/ngs2/glances/", pattern = "glances", full.names = TRUE)
+usage_files <- list.files(path = "/opt/ngs2/glances/", pattern = "glances", full.names = TRUE)
 
 # ignore SLURM nodes; only the first two additional nodes get exposed
-files <- files %>% discard(str_detect(files, "nodeSBI"))
-files <- c(files %>% discard(str_detect(files, "nodesbi")),
-           files %>% keep(str_detect(files, "nodesbi")))
+usage_files <- usage_files %>% discard(str_detect(usage_files, "nodeSBI"))
+usage_files <- c(usage_files %>% discard(str_detect(usage_files, "nodesbi")),
+           usage_files %>% keep(str_detect(usage_files, "nodesbi")))
 
 # Create reactivate file readers for continues updates
-message(sprintf("Found %i, setting up file readers", length(files)))
-df.list <- map(files, read.csv)
-names(df.list) <- files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1")
-message(sprintf("Servers are: %s\n", names(df.list)))
+message(sprintf("Found %i, setting up file readers", length(usage_files)))
+usage.list <- map(usage_files, read.csv)
+names(usage.list) <- usage_files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1")
+message(sprintf("Servers are: %s\n", names(usage.list)))
 
 
 # Reorder Position of Server Plots
 server_order <- c('ikarus', 'daidalos', 'kottos', 'agaricus', 'amantia', 'russula', 'nodesbi01', 'nodesbi02')
-if (any(!names(df.list) %in% server_order)) {
+if (any(!names(usage.list) %in% server_order)) {
   warning("One or more servers are not in 'server_order'. Not chaning order ...")
 } else {
   # maybe not all servers are being watched
-  server_order <- server_order[server_order %in% names(df.list)]
+  server_order <- server_order[server_order %in% names(usage.list)]
   # reorder
-  df.list <- df.list[server_order]
+  usage.list <- usage.list[server_order]
 }
 
 
-# Grab & add CPU cores
-names(df.list) <- map2(df.list, names(df.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
+#== Grab & add CPU cores to server titles ====
+names(usage.list) <- map2(usage.list, names(usage.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
 
 
 # get top-server users
@@ -53,7 +53,7 @@ names(df.list) <- map2(df.list, names(df.list), ~ sprintf("%s, %i threads", .y, 
 
 
 #== Filter and Reformat data ====
-df.list <- map(df.list, function(df) {
+usage.list <- map(usage.list, function(df) {
   tryCatch({
     df %>%
       slice_tail(n = 120) %>%
@@ -75,15 +75,15 @@ df.list <- map(df.list, function(df) {
 #== Create plot ====
 
 #' Function to compute the actual usage graphs
-#' @param df.list Named list of data.frame with the measurement data (long-formatted)
+#' @param usage.list Named list of data.frame with the measurement data (long-formatted)
 #' @use_type Rendering type. Either
 #' patchwork: render each plot individually & concatenate using patchwork. Quite slow, but robust against missing data.
 #' facet: render all plots as one ggplot using facet over server. Faster, but failed servers may disappear
-calc_graph <- function(df.list, use_type) {
+calc_graph <- function(usage.list, use_type) {
 
   if (use_type == "patchwork") {
     require(patchwork)
-    plots <- map2(df.list, names(df.list), function(df, name) {
+    plots <- map2(usage.list, names(usage.list), function(df, name) {
       if (nrow(df) > 0) {
         ggplot(df, aes(x = minute)) +
           geom_path(aes(y = percentage, color = type), size = 1.5) +
@@ -108,7 +108,7 @@ calc_graph <- function(df.list, use_type) {
   } else if (use_type == "facet") {
 
     # merge all measurements
-    df <- bind_rows(df.list, .id = "Server")
+    df <- bind_rows(usage.list, .id = "Server")
     if (nrow(df) > 0) {
       df %>%
         mutate(Server = fct_inorder(Server)) %>%
@@ -136,7 +136,7 @@ calc_graph <- function(df.list, use_type) {
 
 
 # Render plot
-usage_graphs <- calc_graph(df.list = df.list, use_type = "facet")
+usage_graphs <- calc_graph(usage.list = usage.list, use_type = "facet")
 
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)
@@ -146,12 +146,12 @@ saveRDS(usage_graphs, "data/graph.rds")
 #== Benchmark approaches ====
 # library("rbenchmark")
 # # the patchwork approach is, as expected, quite slow (~ 23 seconds)
-# time.patch <- rbenchmark::benchmark(print(calc_graph(df.list = df.list, use_type = "patchwork")),
+# time.patch <- rbenchmark::benchmark(print(calc_graph(usage.list = usage.list, use_type = "patchwork")),
 #                                     replications = 5,
 #                                     columns = c("test", "replications", "elapsed", "relative", "user.self", "sys.self"))
 #
 # # The facet approach is around 4x faster (8-9 seconds)
-# time.facet <- rbenchmark::benchmark(print(calc_graph(df.list = df.list, use_type = "facet")),
+# time.facet <- rbenchmark::benchmark(print(calc_graph(usage.list = usage.list, use_type = "facet")),
 #                                     replications = 5,
 #                                     columns = c("test", "replications", "elapsed", "relative", "user.self", "sys.self"))
 #
