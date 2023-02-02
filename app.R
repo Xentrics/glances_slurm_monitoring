@@ -37,7 +37,7 @@ ui <-
 
     # Title
     titlePanel(
-      title = h1(id="big-heading", "MBD Servers"),
+      title = h1(id="big-heading", "MBD Servers", align = "center"),
       # Application Icon (for web-browser tab)
       tags$head(tags$link(rel = "icon", type = "image/png", href = "logo_128.png"),
                 tags$title("MBD Servers"))
@@ -63,7 +63,7 @@ graph_file <- file.path(getwd(), "data/graph.rds")
 if (!file.exists(graph_file)) stop("Graph file not found! Did you run background_job.R?")
 
 safe.readRDS <- possibly(readRDS, NULL)
-gg.graph <- reactiveFileReader(60000, NULL, filePath = graph_file, readFunc = safe.readRDS)
+gg.graph <- reactiveFileReader(20000, NULL, filePath = graph_file, readFunc = safe.readRDS)
 
 # keeps the last valid plot
 last_plot <- reactiveValues(plot = NULL)
