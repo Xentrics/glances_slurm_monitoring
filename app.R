@@ -38,7 +38,7 @@ ui <-
       title = h1(id="big-heading", "MBD Dev Servers", align = "center"),
       # Application Icon (for web-browser tab)
       tags$head(tags$link(rel = "icon", type = "image/png", href = "logo_128.png"),
-                tags$title("MBD Servers"))
+                tags$title("MBD Dev Servers"))
     ),
 
     textOutput("update_text"),
