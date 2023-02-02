@@ -5,6 +5,7 @@ library(dplyr)  # For filtering and manipulating data
 library(stringr)
 library(purrr)
 library(forcats)
+library(ggtext)
 
 source("functions.R")
 
