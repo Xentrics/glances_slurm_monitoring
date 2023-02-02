@@ -39,12 +39,34 @@ if (any(!names(usage.list) %in% server_order)) {
 }
 
 
+#== Add information about the strongest users ====
+top.files <- list.files(path = data_directory, pattern = "top_users", full.names = TRUE)
+names(top.files) <- top.files %>% basename() %>% str_replace("top_users\\.(.*)\\.tsv", "\\1")
+top_data_list <- list()
+
+# load only the data for the currently displayed servers
+shared <- intersect(names(usage.list), names(top.files))
+missing <- setdiff(names(usage.list), shared) %>% set_names(.,.)
+
+if (length(shared) > 0) {
+  # load data
+  top.files <- top.files[shared]
+  top_data_list <- map(top.files, parse_top_data, n_max = 3)
+}
+
+if (length(missing) > 0) {
+  top_data_list <- c(top_data_list, map(missing, ~ "_unknown_"))
+}
+
+# sanity check
+stopifnot(names(top_data_list) %in% names(usage.list))
+top_data_list <- top_data_list[names(usage.list)]
+
+
 #== Grab & add CPU cores to server titles ====
-names(usage.list) <- map2(usage.list, names(usage.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
-
-
-# get top-server users
-# TODO
+names(top_data_list) <- map2(usage.list, names(usage.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
+names(usage.list)    <- map2(usage.list, names(usage.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
+stopifnot(names(top_data_list) == names(usage.list))
 
 
 #== Filter and Reformat data ====
@@ -70,7 +92,7 @@ usage.list <- map(usage.list, function(df) {
 #== Create plot ====
 
 # Render plot
-usage_graphs <- calc_graph(usage.list = usage.list, use_type = "facet")
+usage_graphs <- calc_graph(usage.list = usage.list, top_data_list, use_type = "facet")
 
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)
