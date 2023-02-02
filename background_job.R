@@ -5,6 +5,8 @@ library(stringr)
 library(purrr)
 library(forcats)
 
+source("functions.R")
+
 #== Description====
 # This script should be run every 1 minute using cron
 # It reads the current measurement data & creates the ggplots from it
@@ -92,7 +94,7 @@ usage.list <- map(usage.list, function(df) {
 #== Create plot ====
 
 # Render plot
-usage_graphs <- calc_graph(usage.list = usage.list, top_data_list, use_type = "facet")
+usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list, use_type = "facet")
 
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)
