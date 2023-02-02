@@ -1,12 +1,13 @@
 #== Packages ----
+source("functions.R")
+
 library(shiny)  # Required to run any Shiny app
 library(ggplot2)  # For creating pretty plots
 library(dplyr)  # For filtering and manipulating data
 library(stringr)
 library(purrr)
 library(forcats)
-
-source("functions.R")
+library(ggtext)
 
 #== Description====
 # This script should be run within a shiny-verse docker container
@@ -34,7 +35,7 @@ ui <-
 
     # Title
     titlePanel(
-      title = h1(id="big-heading", "MBD Servers", align = "center"),
+      title = h1(id="big-heading", "MBD Dev Servers", align = "center"),
       # Application Icon (for web-browser tab)
       tags$head(tags$link(rel = "icon", type = "image/png", href = "logo_128.png"),
                 tags$title("MBD Servers"))

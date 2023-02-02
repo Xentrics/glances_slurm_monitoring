@@ -1,4 +1,6 @@
 
+.libPaths(c("src/R-site-library", .libPaths()))
+
 #' Simulate GGplot color palette
 #' @param n Number of colors to generate
 #' @return Character(n). Colors
@@ -8,7 +10,7 @@ gg_color_hue <- function(n) {
 }
 
 
-safe.read.csv <- possibly(read.csv, otherwise = NULL)
+safe.read.csv <- purrr::possibly(read.csv, otherwise = NULL)
 
 
 #' Parse top user file and return a string describing top users
@@ -106,9 +108,9 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
         scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
-        theme_bw(base_size = 16) +
+        theme_bw(base_size = 20) +
         theme(plot.title = element_text(face="bold"),
-              strip.text = ggtext::element_markdown(size = 10, face="bold"),
+              strip.text = ggtext::element_markdown(face="bold"),
               strip.background = element_blank(),
               panel.grid.minor = element_blank(),
               panel.grid.major.x = element_blank(),
