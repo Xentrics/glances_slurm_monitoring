@@ -5,6 +5,8 @@ library(stringr)
 library(purrr)
 library(forcats)
 
+source("functions.R")
+
 #== Description====
 # This script should be run every 1 minute using cron
 # It reads the current measurement data & creates the ggplots from it
