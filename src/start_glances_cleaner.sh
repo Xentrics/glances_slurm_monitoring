@@ -1,8 +1,8 @@
 #!/bin/bash
-DIR="/sbidata/glances/"
+DIR="/opt/ngs2/glances/"
 FILES="$DIR/*"
 LINE_LIMIT=150 # number of lines to start cleaning
-LINE_EXT=100   # number of lines to extract from existing file
+LINE_EXT=120   # number of lines to extract from existing file
 
 if (( LINE_EXT >= LINE_LIMIT )); then
    echo "ERROR: LINE_EXT must be smaller than LINE_LIMIT!"
