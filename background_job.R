@@ -66,8 +66,8 @@ top_data_list <- top_data_list[names(usage.list)]
 
 
 #== Grab & add CPU cores to server titles ====
-names(top_data_list) <- map2(usage.list, names(usage.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
-names(usage.list)    <- map2(usage.list, names(usage.list), ~ sprintf("%s, %i threads", .y, .x$cpu.cpucore[[1]]))
+names(top_data_list) <- annotate_server_header(df.list = usage.list)
+names(usage.list)    <- annotate_server_header(df.list = usage.list)
 stopifnot(names(top_data_list) == names(usage.list))
 
 

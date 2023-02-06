@@ -10,6 +10,32 @@ gg_color_hue <- function(n) {
 }
 
 
+simplify_mem_number <- function(x, base = 1024, exp = 3, shift = 2) {
+  # round number & replace last two digits with zeros
+  round(x/(base^exp) / 10^shift) * 10^shift
+}
+
+
+#' Enhance the names of a list containing server usage data
+#' @param df.list Names list of data.frames. Expected: usage.list
+#' @param beautify If TRUE, html strings are used to add styling (colors, etc.).
+#' @return Names character, were names(val) are names(df.list), but entries are
+#' the new names
+annotate_server_header <- function(df.list, beautify = TRUE) {
+
+  if (!beautify) {
+    map2(df.list, names(df.list), ~ sprintf("%s  [%i Core] [%i GiB Mem]", .y, .x$cpu.cpucore[[1]], round(.x$mem.total[[1]]/(1024^3))))
+  } else {
+    map2(df.list, names(df.list), ~ sprintf("%s  [ <span style='color:#F8766D; font-weight: normal'>%i Core</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB Mem</span> ]",
+                                            .y,
+                                            .x$cpu.cpucore[[1]],
+                                            simplify_mem_number(.x$mem.total[[1]])
+                                            )
+         )
+  }
+}
+
+
 safe.read.csv <- purrr::possibly(read.csv, otherwise = NULL)
 
 
