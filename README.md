@@ -28,8 +28,11 @@
 - [x] make readable x-axis
 - [x] make standalone web-server
 - [x] add web-page icon in browser bar
+- [x] separate data parsing & figure creation (backend) from web-app (front-end)
 - [x] separate core and slurm servers
 - [ ] make a switch page between SLURM and non-SLURM servers
-- [ ] use a single file for reading server usage
 - [ ] display a warning if usage of a server is too high
-- [ ] show top-using user per server
+- [x] show top-using user per server
+- [x] add overall file system usage
+- [ ] show scratch usage per server
+
