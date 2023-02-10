@@ -76,6 +76,22 @@ stopifnot(names(top_data_list) == names(usage.list))
 # use one server to assess file system usage
 fs_usage <- NULL
 if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
+
+  # summarise /sbidata partition information
+  sbidata <- tryCatch({
+    first <- usage.list[[1]] %>% slice_head(n=1) %>% select(starts_with("fs..sbidata"), -contains("projects")) %>% select(where(is.numeric))
+    last  <- usage.list[[1]] %>% slice_tail(n=1) %>% select(starts_with("fs..sbidata"), -contains("projects")) %>% select(where(is.numeric))
+    diff <- first - last
+    sbidata <- sprintf("<span style='color:blue'>sbidata</span>: [<span style='color:blue'>%i</span> / <span style='color:blue'>%i Tb</span>], %s <span style='color:blue'>%.2f Gb</span>",
+                       round(last$fs..sbidata.used / 1000^4), round(last$fs..sbidata.size / 1000^4),
+                       "&Delta;",
+                       diff$fs..sbidata.used / 1000^3)
+    #ggplot() + ggtitle(sbidata) + theme(plot.title = ggtext::element_markdown())
+  }, error = function(e) {
+    ""
+  })
+
+  # parse remaining real-time file system usage
   fs_usage <- tryCatch({
     usage.list[[1]] %>%
       slice_tail(n = 120) %>%
@@ -117,8 +133,8 @@ usage.list <- map(usage.list, function(df) {
 # merge HPC and FS information
 if (!is.null(fs_usage)) {
   usage.list <- c(usage.list, list("filesystem" = fs_usage))
-  fs_overuse <- fs_usage %>% filter(percentage >= 95) %>% pull(type) %>% unique() %>% paste(collapse = ",")
-  top_data_list <- c(top_data_list, list("filesystem" = fs_overuse))
+  fs_overuse <- fs_usage %>% filter(percentage >= 95) %>% pull(type) %>% unique() %>% map_chr(~ sprintf("<span style='color:red'>!!%s!!</span>", .x)) %>% paste(collapse = "; ")
+  top_data_list <- c(top_data_list, list("filesystem" = paste0(fs_overuse, sbidata)))
 }
 
 

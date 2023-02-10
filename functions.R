@@ -132,7 +132,7 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
         facet_wrap(~ Server + Users, scales = "free_x") +
         geom_path(aes(y = percentage, color = type, size = type)) +
         scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38",
-                                      "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "#00B4D8", "sbiprojects" = "#0077B6")) +
+                                      "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "red", "sbiprojects" = "darkorange")) +
         scale_size_manual(values = c("CPU" = 1.5, "MEM" = 1.5, "load.min15" = 1.5,
                                    "sbiarchiv" = 0.75, "sbisra" = 0.75, "sbidata" = 0.75, "sbiprojects" = 0.75)) +
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
