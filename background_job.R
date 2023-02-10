@@ -22,7 +22,7 @@ usage_files <- usage_files %>% discard(str_detect(usage_files, "nodeSBI"))
 usage_files <- c(usage_files %>% discard(str_detect(usage_files, "nodesbi")),
                  usage_files %>% keep(str_detect(usage_files, "nodesbi")))
 
-# Create reactivate file readers for continues updates
+# Read CSV files & extract server names from files
 message(sprintf("Found %i, setting up file readers", length(usage_files)))
 usage.list <- map(usage_files, read.csv)
 names(usage.list) <- usage_files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1")
@@ -72,6 +72,28 @@ stopifnot(names(top_data_list) == names(usage.list))
 
 
 #== Filter and Reformat data ====
+
+# use one server to assess file system usage
+fs_usage <- NULL
+if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
+  fs_usage <- tryCatch({
+    usage.list[[1]] %>%
+      slice_tail(n = 120) %>%
+      mutate(entry = 1:nrow(.), .before = 1) %>%
+      # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
+      mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
+      select(entry, minute, matches("^fs\\.\\..*\\.percent")) %>%
+      rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
+      rename_with(~ "sbiprojects", any_of("sbidata.projects")) %>%
+      tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
+      mutate(type = fct_inorder(type) %>% fct_rev())
+  }, except = function(e) {
+    NULL
+  })
+}
+
+
+# reformat CPU, Memory, and Load information per server
 usage.list <- map(usage.list, function(df) {
   tryCatch({
     df %>%
@@ -81,14 +103,23 @@ usage.list <- map(usage.list, function(df) {
       mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
       #mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
       mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
-      select(entry, minute, cpu.total, mem.percent, load.min15) %>%
+      select(entry, minute, cpu.total, mem.percent, load.min15, any_of(c("fs..sbilocal.percent", "fs..scratch.percent"))) %>%
       rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
+      rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
       tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
       mutate(type = fct_inorder(type) %>% fct_rev())
   }, error = function(e) {
     data.frame()
   })
 })
+
+
+# merge HPC and FS information
+if (!is.null(fs_usage)) {
+  usage.list <- c(usage.list, list("filesystem" = fs_usage))
+  fs_overuse <- fs_usage %>% filter(percentage >= 95) %>% pull(type) %>% unique() %>% paste(collapse = ",")
+  top_data_list <- c(top_data_list, list("filesystem" = fs_overuse))
+}
 
 
 #== Create plot ====
