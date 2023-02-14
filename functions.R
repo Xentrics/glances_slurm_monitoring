@@ -107,7 +107,7 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
       if (nrow(df) > 0) {
         ggplot(df, aes(x = minute)) +
           geom_path(aes(y = percentage, color = type, linetype = type), size = 1.5) +
-          scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38",
+          scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38", "scratch" = "#1AA7EC",
                                         "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "#00B4D8", "sbiprojects" = "#0077B6")) +
           # scale_linetype_manual(values = c("CPU" = 1, "MEM" = 1, "load.min15" = 1,
           #                                  "sbiarchiv" = 2, "sbisra" = 2, "sbidata" = 2, "sbiprojects" = 2)) +
@@ -140,13 +140,15 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
         mutate(Server = fct_inorder(Server)) %>%
         ggplot(aes(x = minute)) +
         facet_wrap(~ Server + Users, scales = "free_x") +
-        geom_path(aes(y = percentage, color = type, size = type)) +
-        scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38",
+        geom_path(aes(y = percentage, color = type, size = type, linetype = type)) +
+        scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38", "scratch" = "#1AA7EC",
                                       "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "red", "sbiprojects" = "darkorange")) +
-        scale_size_manual(values = c("CPU" = 1.5, "MEM" = 1.5, "load.min15" = 1.5,
+        scale_size_manual(values = c("CPU" = 1.25, "MEM" = 1.25, "load.min15" = 1.25, "scratch" = 0.75,
                                    "sbiarchiv" = 0.75, "sbisra" = 0.75, "sbidata" = 0.75, "sbiprojects" = 0.75)) +
+        scale_linetype_manual(values = c("CPU" = 1, "MEM" = 1, "load.min15" = 1, "scratch" = 4,
+                                        "sbiarchiv" = 4, "sbisra" = 4, "sbidata" = 4, "sbiprojects" = 4)) +
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
-        scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
+        scale_y_continuous(limits = c(0.01, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
         theme_bw(base_size = 20) +
         theme(plot.title = element_text(face="bold"),

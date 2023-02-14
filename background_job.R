@@ -112,17 +112,23 @@ if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
 
 # reformat CPU, Memory, and Load information per server
 usage.list <- map(usage.list, function(df) {
+  fs_scratch_names <- c("fs..sbilocal.percent", "fs..scratch.percent", "fs..scratch.percent")
   tryCatch({
     df %>%
       slice_tail(n = 120) %>%
       mutate(entry = 1:nrow(.), .before = 1) %>%
       # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
       mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
+      # uncomment to enable load measure
+      #mutate(across(c(minute, cpu.total, mem.percent, load.min15, load.cpucore), as.numeric)) %>%
       #mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
-      mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
-      select(entry, minute, cpu.total, mem.percent, load.min15, any_of(c("fs..sbilocal.percent", "fs..scratch.percent"))) %>%
+      #mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
+      #select(entry, minute, cpu.total, mem.percent, load.min15, any_of(fs_scratch_names)) %>%
+      mutate(across(c(minute, cpu.total, mem.percent, load.cpucore), as.numeric)) %>%
+      select(entry, minute, cpu.total, mem.percent, any_of(fs_scratch_names)) %>%
       rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
-      rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
+      rename_with(~ "scratch", .cols = any_of(fs_scratch_names)) %>%
+      #rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
       tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
       mutate(type = fct_inorder(type) %>% fct_rev())
   }, error = function(e) {
