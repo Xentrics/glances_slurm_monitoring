@@ -113,17 +113,19 @@ if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
 # reformat CPU, Memory, and Load information per server
 usage.list <- map(usage.list, function(df) {
   fs_scratch_names <- c("fs..sbilocal.percent", "fs..scratch.percent", "fs..scratch.percent")
-  cols_of_interest <- c("minute", "cpu.total", "mem.percent", fs_scratch_names)
+  cols_of_interest <- c("cpu.total", "mem.percent", fs_scratch_names)
   tryCatch({
+    # (cpucore should stay the same across all values and not be crazy high!)
+    cpucore_ref <- min(max(df$cpu.cpucore, na.rm = T), 512)
     df %>%
       slice_tail(n = 120) %>%
       mutate(entry = 1:nrow(.), .before = 1) %>%
       # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
       mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
       # compensate parsing/writing errors
-      mutate(across(c(entry, any_of(cols_of_interest)), as.numeric)) %>%
-      #mutate(across(any_of(cols_of_interest), ~ if_else(is.na(cpu.total), NA_real_, .x))) %>%
-      select(entry, any_of(cols_of_interest)) %>%
+      mutate(across(c(entry, minute, any_of(cols_of_interest), cpu.cpucore), as.numeric)) %>%
+      mutate(across(any_of(cols_of_interest), ~ if_else(is.na(cpu.cpucore) | cpu.cpucore != cpucore_ref, NA_real_, .x))) %>%
+      select(entry, minute, any_of(cols_of_interest)) %>%
       # make nicer variable names
       rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
       rename_with(~ "scratch", .cols = any_of(fs_scratch_names)) %>%
