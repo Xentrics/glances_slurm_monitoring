@@ -34,5 +34,5 @@
 - [ ] display a warning if usage of a server is too high
 - [x] show top-using user per server
 - [x] add overall file system usage
-- [ ] show scratch usage per server
+- [x] show scratch usage per server
 
