@@ -10,6 +10,16 @@ gg_color_hue <- function(n) {
 }
 
 
+#' Depending on the export settings of glances, the names of columns may differ
+#' This function ensures that the data is parsed the same, regardless of the
+#' export setting
+#' @param df Data.frame
+update_column_names <- function(df) {
+  df %>%
+    rename_with(~ str_replace_all(.x, "_", "."))
+}
+
+
 simplify_mem_number <- function(x, base = 1024, exp = 3, shift = 2) {
   # round number & replace last two digits with zeros
   round(x/(base^exp) / 10^shift) * 10^shift

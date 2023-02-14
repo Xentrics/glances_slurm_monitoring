@@ -25,6 +25,7 @@ usage_files <- c(usage_files %>% discard(str_detect(usage_files, "nodesbi")),
 # Read CSV files & extract server names from files
 message(sprintf("Found %i, setting up file readers", length(usage_files)))
 usage.list <- map(usage_files, read.csv)
+usage.list <- map(usage.list, update_column_names)
 names(usage.list) <- usage_files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1")
 message(sprintf("Servers are: %s\n", names(usage.list)))
 
