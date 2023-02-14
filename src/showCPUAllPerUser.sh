@@ -5,7 +5,7 @@ own=Seelbind
 cpus=$(lscpu | grep "^CPU(s):" | awk '{print $2}')
 
 #for user in $(getent passwd | awk -F ":" '{print $1}' | sort -u)
-for user in ABarber AGarcia AMarfil APereira ENychas HLeung JChen KLi LZhang MMirhak PBrassing SLeal SSchaeub Seelbind TSae YNi root 999 1000
+for user in ABarber AGarcia AMarfil APereira ENychas HLeung JChen KLi LZhang MMirhak PBrassing SLeal SSchaeub Seelbind TSae YNi XChen TPongking LXu wlin root 999 1000
 do
     # print other user's CPU usage in parallel but skip own one because
     # spawning many processes will increase our CPU usage significantly
