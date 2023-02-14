@@ -103,7 +103,7 @@ if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
       rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
       rename_with(~ "sbiprojects", any_of("sbidata.projects")) %>%
       tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
-      mutate(type = fct_inorder(type) %>% fct_rev())
+      mutate(type = factor(type, levels = c("sbidata", "sbiprojects", "sbiarchiv", "sbisra")) %>% fct_rev())
   }, except = function(e) {
     NULL
   })
