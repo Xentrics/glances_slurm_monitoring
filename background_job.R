@@ -124,7 +124,7 @@ usage.list <- map(usage.list, function(df) {
       #mutate(load.min5  = pmin(100*load.min5/load.cpucore, 105)) %>%
       #mutate(load.min15 = pmin(100*load.min15/load.cpucore, 105)) %>%
       #select(entry, minute, cpu.total, mem.percent, load.min15, any_of(fs_scratch_names)) %>%
-      mutate(across(c(minute, cpu.total, mem.percent, load.cpucore), as.numeric)) %>%
+      mutate(across(c(minute, cpu.total, mem.percent, load.cpucore, any_of(fs_scratch_names)), as.numeric)) %>%
       select(entry, minute, cpu.total, mem.percent, any_of(fs_scratch_names)) %>%
       rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
       rename_with(~ "scratch", .cols = any_of(fs_scratch_names)) %>%
