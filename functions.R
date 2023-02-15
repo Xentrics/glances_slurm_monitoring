@@ -188,7 +188,7 @@ calc_graph <- function(usage.list, use_type) {
           #scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
           scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38")) +
           scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
-          scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
+          scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name) +
           labs(y = "% usage", x = "ago [min]") +
           theme_bw(base_size = 16) +
@@ -218,7 +218,7 @@ calc_graph <- function(usage.list, use_type) {
         #scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "darkgreen", "load.min5" = "#00BA38")) +
         scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38")) +
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
-        scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
+        scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
         theme_bw(base_size = 16) +
         theme(title = element_text(face="bold"),
