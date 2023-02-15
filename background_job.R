@@ -1,11 +1,10 @@
 #== Packages ----
+source("functions.R")
 library(ggplot2)  # For creating pretty plots
 library(dplyr)  # For filtering and manipulating data
 library(stringr)
 library(purrr)
 library(forcats)
-
-source("functions.R")
 
 #== Description====
 # This script should be run every 1 minute using cron

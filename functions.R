@@ -112,7 +112,7 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
           # scale_linetype_manual(values = c("CPU" = 1, "MEM" = 1, "load.min15" = 1,
           #                                  "sbiarchiv" = 2, "sbisra" = 2, "sbidata" = 2, "sbiprojects" = 2)) +
           scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
-          scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
+          scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name, users) +
           labs(y = "% usage", x = "ago [min]") +
           theme_bw(base_size = 14) +
@@ -148,7 +148,7 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
         scale_linetype_manual(values = c("CPU" = 1, "MEM" = 1, "load.min15" = 1, "scratch" = 4,
                                         "sbiarchiv" = 4, "sbisra" = 4, "sbidata" = 4, "sbiprojects" = 4)) +
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
-        scale_y_continuous(limits = c(0.01, 105), expand = expansion(mult = c(0, 0.01)), breaks = c(0, 50, 75, 100)) +
+        scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
         theme_bw(base_size = 20) +
         theme(plot.title = element_text(face="bold"),
