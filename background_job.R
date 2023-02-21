@@ -115,7 +115,7 @@ usage.list <- map(usage.list, function(df) {
   cols_of_interest <- c("cpu.total", "mem.percent", fs_scratch_names)
   tryCatch({
     # (cpucore should stay the same across all values and not be crazy high!)
-    cpucore_ref <- min(df$cpu.cpucore[df$cpu.cpucore > 0], na.rm = T)
+    cpucore_ref <- median(df$cpu.cpucore[df$cpu.cpucore > 0], na.rm = T)
     df %>%
       slice_tail(n = 120) %>%
       mutate(entry = 1:nrow(.), .before = 1) %>%
