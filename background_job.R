@@ -65,10 +65,42 @@ stopifnot(names(top_data_list) %in% names(usage.list))
 top_data_list <- top_data_list[names(usage.list)]
 
 
+
+#== Parse SLURM job queue ====
+# file created using 'sinfo -N'
+l <- readLines(file.path(data_directory, "squeue.tsv")) %>%
+  str_replace_all(" +", " ") %>%
+  map(~ str_split(.x, " ") %>% unlist)
+
+queue.df <- do.call(rbind, l[-1]) %>%
+  magrittr::set_colnames(l[[1]]) %>%
+  as_tibble() %>%
+  select(NODELIST, STATE) %>%
+  # server can be in multiple queues, but the status should be the same
+  distinct() %>%
+  # select only nodes of interest for the current frame
+  filter(NODELIST %in% str_to_lower(names(usage.list))) %>%
+  arrange(NODELIST) %>%
+  mutate(STATE = annotate_squeue(STATE))
+
+queue.list <- queue.df %>% tibble::deframe()
+# add untracked ones
+missing <- names(usage.list)[!(names(usage.list) %in% names(queue.list))]
+if (length(missing) > 0) {
+  l <- map(missing, function(s) c("<span style='color:gray'>untracked</span>") %>% set_names(s)) %>% unlist()
+  queue.list <- c(queue.list, l)[names(usage.list)]
+}
+
+
 #== Grab & add CPU cores to server titles ====
-names(top_data_list) <- annotate_server_header(df.list = usage.list)
-names(usage.list)    <- annotate_server_header(df.list = usage.list)
+# first: check that the order of all files is the same!
 stopifnot(names(top_data_list) == names(usage.list))
+stopifnot(str_to_lower(names(queue.list)) == str_to_lower(names(usage.list)))
+
+# apply consistent (nicer) names
+names(usage.list)    <- annotate_server_header(df.list = usage.list)
+names(top_data_list) <- names(usage.list)
+names(queue.list)    <- names(usage.list)
 
 
 #== Filter and Reformat data ====
@@ -142,13 +174,14 @@ if (!is.null(fs_usage)) {
   usage.list <- c(usage.list, list("filesystem" = fs_usage))
   fs_overuse <- fs_usage %>% filter(percentage >= 95) %>% pull(type) %>% unique() %>% map_chr(~ sprintf("<span style='color:red'>!!%s!!</span>", .x)) %>% paste(collapse = "; ")
   top_data_list <- c(top_data_list, list("filesystem" = paste0(fs_overuse, sbidata)))
+  queue.list <- c(queue.list, list("filesystem" = ""))
 }
 
 
 #== Create plot ====
 
 # Render plot
-usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list, use_type = "facet")
+usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data_list, queue.list = queue.list, use_type = "facet")
 
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)

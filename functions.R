@@ -46,6 +46,17 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
 }
 
 
+#' Colorize STATE string
+annotate_squeue <- function(STATE) {
+  case_when(
+    STATE == "idle"                    ~ "<span style='color:gray'>idle</span>",
+    STATE %in% c("alloc", "allocated") ~ "<span style='color:#F8766D'>**alloc**</span>",
+    STATE %in% c("mixed", "mix")       ~ "<span style='color:#00BFC4'>**mixed**</span>",
+    TRUE ~ STATE
+  )
+}
+
+
 safe.read.csv <- purrr::possibly(read.csv, otherwise = NULL)
 
 
@@ -95,9 +106,10 @@ parse_top_data <- function(path, sep = "\t", n_max = 5, use_color_css = TRUE) {
 #' @use_type Rendering type. Either
 #' patchwork: render each plot individually & concatenate using patchwork. Quite slow, but robust against missing data.
 #' facet: render all plots as one ggplot using facet over server. Faster, but failed servers may disappear
-calc_graph_top <- function(usage.list, top_data_list, use_type) {
+calc_graph_top <- function(usage.list, top_data_list, queue.list, use_type) {
 
   if (!all(names(usage.list) == names(top_data_list))) stop("One or more names in top_data_list those not match names in usage.list!")
+  if (!all(names(usage.list) == names(queue.list))) stop("One or more names in queue.list those not match names in usage.list!")
 
   if (use_type == "patchwork") {
     require(patchwork)
@@ -130,16 +142,21 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
     wrap_plots(plots) + plot_layout(guides = "collect") & theme(legend.position = 'left')
 
   } else if (use_type == "facet") {
+
     # merge all measurements
     df <- bind_rows(usage.list, .id = "Server") %>%
-      left_join(top_data_list %>% map_df(~ tibble(Users = .x), .id = "Server"))
+      left_join(top_data_list %>% map_df(~ tibble(CPU = .x), .id = "Server")) %>%
+      left_join(queue.list %>% map_df(~ tibble(squeue = .x), .id = "Server")) %>%
+      mutate(CPU    = paste0("<span style='color:#757575'>CPU: </span> ", CPU),
+             squeue = paste0("<span style='color:#757575'>SLURM: </span> ", squeue)) %>%
+      mutate(Server = paste0("**", Server, "**"))
 
     # only plot if any data was loaded
     if (nrow(df) > 0) {
       df %>%
         mutate(Server = fct_inorder(Server)) %>%
         ggplot(aes(x = minute)) +
-        facet_wrap(~ Server + Users, scales = "free_x") +
+        facet_wrap(~ Server + CPU + squeue, scales = "free_x") +
         geom_path(aes(y = percentage, color = type, size = type, linetype = type)) +
         scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38", "scratch" = "#1AA7EC",
                                       "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "red", "sbiprojects" = "darkorange")) +
@@ -152,7 +169,7 @@ calc_graph_top <- function(usage.list, top_data_list, use_type) {
         labs(y = "% usage", x = "ago [min]") +
         theme_bw(base_size = 20) +
         theme(plot.title = element_text(face="bold"),
-              strip.text = ggtext::element_markdown(face="bold"),
+              strip.text = ggtext::element_markdown(hjust = 0.5, margin = unit(c(0.1, 0.1, 0.1, 0.1), "lines")),
               strip.background = element_blank(),
               panel.grid.minor = element_blank(),
               panel.grid.major.x = element_blank(),
