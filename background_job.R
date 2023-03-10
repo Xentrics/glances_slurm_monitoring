@@ -75,15 +75,13 @@ l <- readLines(file.path(data_directory, "squeue.tsv")) %>%
 queue.df <- do.call(rbind, l[-1]) %>%
   magrittr::set_colnames(l[[1]]) %>%
   as_tibble() %>%
-  select(NODELIST, STATE) %>%
-  # server can be in multiple queues, but the status should be the same
-  distinct() %>%
+  select(HOSTNAMES, STATE, `CPUS(A/I/O/T)`) %>%
   # select only nodes of interest for the current frame
-  filter(NODELIST %in% str_to_lower(names(usage.list))) %>%
-  arrange(NODELIST) %>%
-  mutate(STATE = annotate_squeue(STATE))
+  filter(HOSTNAMES %in% str_to_lower(names(usage.list))) %>%
+  arrange(HOSTNAMES) %>%
+  mutate(STATE = annotate_squeue(STATE = STATE, CPUS = `CPUS(A/I/O/T)`))
 
-queue.list <- queue.df %>% tibble::deframe()
+queue.list <- queue.df %>% select(HOSTNAMES, STATE) %>% tibble::deframe()
 # add untracked ones
 missing <- names(usage.list)[!(names(usage.list) %in% names(queue.list))]
 if (length(missing) > 0) {

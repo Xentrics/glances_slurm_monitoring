@@ -47,7 +47,7 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
 
 
 #' Colorize STATE string
-annotate_squeue <- function(STATE) {
+annotate_squeue <- function(STATE, CPUS) {
   case_when(
     STATE == "idle"                    ~ "<span style='color:gray'>idle</span>",
     STATE %in% c("alloc", "allocated") ~ "<span style='color:#F8766D'>**alloc**</span>",
