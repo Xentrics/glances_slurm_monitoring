@@ -68,7 +68,7 @@ top_data_list <- top_data_list[names(usage.list)]
 
 #== Parse SLURM job queue ====
 # file created using 'sinfo -N'
-l <- readLines(file.path(data_directory, "squeue.tsv")) %>%
+l <- readLines(file.path(data_directory, "susage.tsv")) %>%
   str_replace_all(" +", " ") %>%
   map(~ str_split(.x, " ") %>% unlist)
 
@@ -184,4 +184,5 @@ usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)
 saveRDS(usage_graphs, "data/graph.rds")
+ggsave(filename = "data/graph.pdf", plot = usage_graphs, width = 1920, height = 900, units = "px", dpi = 96, scale = 1.25)
 

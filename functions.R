@@ -48,10 +48,11 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
 
 #' Colorize STATE string
 annotate_squeue <- function(STATE, CPUS) {
+  CORES <- str_replace(CPUS, "(\\d+)/(\\d+)/(\\d+)/(\\d+)", "[\\1/\\4] Free: \\2")
   case_when(
-    STATE == "idle"                    ~ "<span style='color:gray'>idle</span>",
-    STATE %in% c("alloc", "allocated") ~ "<span style='color:#F8766D'>**alloc**</span>",
-    STATE %in% c("mixed", "mix")       ~ "<span style='color:#00BFC4'>**mixed**</span>",
+    STATE == "idle"                    ~ paste("<span style='color:gray'>idle</span>", CORES),
+    STATE %in% c("alloc", "allocated") ~ paste("<span style='color:#F8766D'>**alloc**</span>", CORES),
+    STATE %in% c("mixed", "mix")       ~ paste("<span style='color:#00BFC4'>**mixed**</span>", CORES),
     TRUE ~ STATE
   )
 }
@@ -127,6 +128,7 @@ calc_graph_top <- function(usage.list, top_data_list, queue.list, use_type) {
           scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name, users) +
           labs(y = "% usage", x = "ago [min]") +
+          coord_cartesian() +
           theme_bw(base_size = 14) +
           theme(plot.title = ggtext::element_markdown(face="bold"),
                 plot.subtitle	= ggtext::element_markdown(size = 10, face="bold"),
@@ -167,6 +169,7 @@ calc_graph_top <- function(usage.list, top_data_list, queue.list, use_type) {
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
         scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
+        coord_cartesian() +
         theme_bw(base_size = 20) +
         theme(plot.title = element_text(face="bold"),
               strip.text = ggtext::element_markdown(hjust = 0.5, margin = unit(c(0.1, 0.1, 0.1, 0.1), "lines")),
@@ -208,6 +211,7 @@ calc_graph <- function(usage.list, use_type) {
           scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
           ggtitle(name) +
           labs(y = "% usage", x = "ago [min]") +
+          coord_cartesian() +
           theme_bw(base_size = 16) +
           theme(title = element_text(face="bold"),
                 panel.grid.minor = element_blank(),
@@ -237,6 +241,7 @@ calc_graph <- function(usage.list, use_type) {
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
         scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
+        coord_cartesian() +
         theme_bw(base_size = 16) +
         theme(title = element_text(face="bold"),
               strip.text = element_text(face = "bold"),
