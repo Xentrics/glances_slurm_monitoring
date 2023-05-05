@@ -40,6 +40,7 @@ define DOCKER_RUN_ARGS_ENV
 	-e DISABLE_AUTH=true
 endef
 
+
 # Start shiny server
 # All shiny apps need to be linked under /srv/shiny-server
 shiny:
@@ -50,6 +51,18 @@ shiny:
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		shiny-verse:4.1_SBI
+
+# shiny app but started with podman
+# shiny does not allow to be run as root ... I have not found a way to change this
+shinypod:
+	podman run -d --rm \
+		-p 4444:3838 \
+		--volume $(PROJECT_ROOT):/srv/shiny-server/glances \
+                --volume /sbidata/seelbind/lab/glances_server_perf_slurm/:/srv/shiny-server/glances_slurm \
+		--name $(DOCKER_CONTAINER_NAME) \
+		$(DOCKER_RUN_ARGS) \
+		shiny-verse:4.1_SBI
+#		sed -i 's/run_as shiny/run_as root/g' /etc/shiny-server/shiny-server.conf && /init
 
 
 # Start docker container for interactive analysis
