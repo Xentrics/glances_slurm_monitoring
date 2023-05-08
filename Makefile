@@ -62,7 +62,7 @@ shinypod:
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		shiny-verse:4.1_SBI
-#		sed -i 's/run_as shiny/run_as root/g' /etc/shiny-server/shiny-server.conf && /init
+		#sed -i 's/run_as shiny/run_as root/g' /etc/shiny-server/shiny-server.conf && /init
 
 
 # Start docker container for interactive analysis
@@ -71,12 +71,22 @@ shinypod:
 # - user rstudio as the analysis root directory as home
 env:
 	docker run -d --rm \
-		-p $(DOCKER_ENV_PORT):8787 \
+		-p 4040:8787 \
 		--name $(DOCKER_ENV_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		$(DOCKER_RUN_ARGS_ENV) \
 		rocker/verse:4.1 \
 		/init && \
 		echo SUCCESS: Interactive analysis container $(DOCKER_CONTAINER_NAME) started at http://$(shell hostname):$(DOCKER_ENV_PORT)
+
+
+envpod:
+	podman run -d --rm \
+		-p 4040:8787 \
+		--name $(DOCKER_ENV_NAME) \
+		$(DOCKER_RUN_ARGS) \
+		docker.io/rocker/verse:4.1 \
+		bash -c "echo 'root:tesseract' | chpasswd && echo 'auth-minimum-user-id=0' >> /etc/rstudio/rserver.conf && /init"
+
 
 
