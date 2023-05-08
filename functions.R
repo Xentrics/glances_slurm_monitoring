@@ -47,18 +47,41 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
 
 
 #' Colorize STATE string
-annotate_squeue <- function(STATE, CPUS) {
-  CORES <- str_replace(CPUS, "(\\d+)/(\\d+)/(\\d+)/(\\d+)", "[\\1/\\4] Free: \\2")
+annotate_susage <- function(STATE, CPUS) {
+  CORES <- str_replace(CPUS, "(\\d+)/(\\d+)/(\\d+)/(\\d+)", "\\1")
   case_when(
-    STATE == "idle"                    ~ paste("<span style='color:gray'>idle</span>", CORES),
-    STATE %in% c("alloc", "allocated") ~ paste("<span style='color:#F8766D'>**alloc**</span>", CORES),
-    STATE %in% c("mixed", "mix")       ~ paste("<span style='color:#00BFC4'>**mixed**</span>", CORES),
+    STATE == "idle"                    ~ sprintf("<span style='color:gray'>idle</span> [<span style='color:gray'>**%s**</span>] ", CORES),
+    STATE %in% c("alloc", "allocated") ~ sprintf("<span style='color:#F8766D'>**alloc**</span> [<span style='color:#F8766D'>**%s**</span>] ", CORES),
+    STATE %in% c("mixed", "mix")       ~ sprintf("<span style='color:#00BFC4'>**mixed**</span> [<span style='color:#00BFC4'>**%s**</span>] ", CORES),
     TRUE ~ STATE
   )
 }
 
 
+#' Colorize QUEUE string
+annotate_squeue <- function(STATE, USER, CPUS) {
+  USER <- str_extract(USER, "^.{1,4}")
+  case_when(
+    STATE %in% c("alloc", "allocated") ~ sprintf("<span style='color:#F8766D'>*%s*</span>[<span style='color:#F8766D'>%s</span>]", USER, CPUS),
+    STATE %in% c("mixed", "mix")       ~ sprintf("<span style='color:#00BFC4'>*%s*</span>[<span style='color:#00BFC4'>%s</span>]", USER, CPUS),
+    STATE == "idle"                    ~ sprintf("<span style='color:gray'>*%s*</span>[<span style='color:gray'>%s</span>]"      , USER, CPUS),
+    TRUE                               ~ sprintf("%s [%s]", USER, CPUS)
+  )
+}
+
+
 safe.read.csv <- purrr::possibly(read.csv, otherwise = NULL)
+
+
+#' Read a white-space separated table with varying separator numbers
+#' To resolve this, we have to replace the white spaces first & read again
+read.csv.whitespace <- function(path, check.names = F) {
+  path %>%
+    readLines() %>%
+    str_replace_all("\\s+", "\t") %>%
+    read.delim(text = ., header = TRUE, check.names = check.names) %>%
+    as_tibble(.name_repair = "unique")
+}
 
 
 #' Parse top user file and return a string describing top users
@@ -107,10 +130,10 @@ parse_top_data <- function(path, sep = "\t", n_max = 5, use_color_css = TRUE) {
 #' @use_type Rendering type. Either
 #' patchwork: render each plot individually & concatenate using patchwork. Quite slow, but robust against missing data.
 #' facet: render all plots as one ggplot using facet over server. Faster, but failed servers may disappear
-calc_graph_top <- function(usage.list, top_data_list, queue.list, use_type) {
+calc_graph_top <- function(usage.list, top_data_list, state.map, use_type) {
 
   if (!all(names(usage.list) == names(top_data_list))) stop("One or more names in top_data_list those not match names in usage.list!")
-  if (!all(names(usage.list) == names(queue.list))) stop("One or more names in queue.list those not match names in usage.list!")
+  if (!all(names(usage.list) == names(state.map))) stop("One or more names in state.map those not match names in usage.list!")
 
   if (use_type == "patchwork") {
     require(patchwork)
@@ -148,17 +171,18 @@ calc_graph_top <- function(usage.list, top_data_list, queue.list, use_type) {
     # merge all measurements
     df <- bind_rows(usage.list, .id = "Server") %>%
       left_join(top_data_list %>% map_df(~ tibble(CPU = .x), .id = "Server")) %>%
-      left_join(queue.list %>% map_df(~ tibble(squeue = .x), .id = "Server")) %>%
+      left_join(state.map %>% map_df(~ tibble(squeue = .x), .id = "Server")) %>%
       mutate(CPU    = paste0("<span style='color:#757575'>CPU: </span> ", CPU),
              squeue = paste0("<span style='color:#757575'>SLURM: </span> ", squeue)) %>%
-      mutate(Server = paste0("**", Server, "**"))
+      mutate(Server = paste0("**", Server, "**")) %>%
+      mutate(Label = sprintf("%s<br>%s<br>%s", Server, CPU, squeue))
 
     # only plot if any data was loaded
     if (nrow(df) > 0) {
       df %>%
         mutate(Server = fct_inorder(Server)) %>%
         ggplot(aes(x = minute)) +
-        facet_wrap(~ Server + CPU + squeue, scales = "free_x") +
+        facet_wrap(~ Label, scales = "free_x") +
         geom_path(aes(y = percentage, color = type, size = type, linetype = type)) +
         scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38", "scratch" = "#1AA7EC",
                                       "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "red", "sbiprojects" = "darkorange")) +

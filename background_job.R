@@ -23,8 +23,9 @@ usage_files <- c(usage_files %>% discard(str_detect(usage_files, "nodesbi")),
 
 # Read CSV files & extract server names from files
 message(sprintf("Found %i, setting up file readers", length(usage_files)))
-usage.list <- map(usage_files, read.csv)
-usage.list <- map(usage.list, update_column_names)
+usage.list_tmp <- map(usage_files, read.csv)
+
+usage.list <- map(usage.list_tmp, update_column_names)
 names(usage.list) <- usage_files %>% basename() %>% str_replace("glances\\.(.*)\\.csv", "\\1")
 message(sprintf("Servers are: %s\n", names(usage.list)))
 
@@ -66,39 +67,60 @@ top_data_list <- top_data_list[names(usage.list)]
 
 
 
-#== Parse SLURM job queue ====
+#== Parse SLURM usage ====
 # file created using 'sinfo -N'
-l <- readLines(file.path(data_directory, "susage.tsv")) %>%
-  str_replace_all(" +", " ") %>%
-  map(~ str_split(.x, " ") %>% unlist)
-
-queue.df <- do.call(rbind, l[-1]) %>%
-  magrittr::set_colnames(l[[1]]) %>%
-  as_tibble() %>%
+susage.df <- read.csv.whitespace(path = file.path(data_directory, "susage.tsv")) %>%
   select(HOSTNAMES, STATE, `CPUS(A/I/O/T)`) %>%
   # select only nodes of interest for the current frame
   filter(HOSTNAMES %in% str_to_lower(names(usage.list))) %>%
-  arrange(HOSTNAMES) %>%
-  mutate(STATE = annotate_squeue(STATE = STATE, CPUS = `CPUS(A/I/O/T)`))
+  arrange(HOSTNAMES)
 
-queue.list <- queue.df %>% select(HOSTNAMES, STATE) %>% tibble::deframe()
+state.map <- susage.df %>%
+  mutate(STATE = annotate_susage(STATE = STATE, CPUS = `CPUS(A/I/O/T)`)) %>%
+  select(HOSTNAMES, STATE) %>% tibble::deframe()
+
 # add untracked ones
-missing <- names(usage.list)[!(names(usage.list) %in% names(queue.list))]
+missing <- names(usage.list)[!(names(usage.list) %in% names(state.map))]
 if (length(missing) > 0) {
   l <- map(missing, function(s) c("<span style='color:gray'>untracked</span>") %>% set_names(s)) %>% unlist()
-  queue.list <- c(queue.list, l)[names(usage.list)]
+  state.map <- c(state.map, l)[names(usage.list)]
 }
+
+
+#== Parse SLURM job queue ====
+# file created using 'squeue'
+queue.df <- read.csv.whitespace(file.path(data_directory, "squeue.tsv")) %>%
+  filter(ST == "R") %>%
+  filter(NODELIST %in% susage.df$HOSTNAMES) %>%
+  left_join(susage.df, by = c("NODELIST" = "HOSTNAMES"))
+
+squeue.map <- tryCatch({
+  queue.df %>%
+    mutate(USAGE = annotate_squeue(STATE, USER, CPUS)) %>%
+    select(NODELIST, USER, USAGE) %>%
+    group_by(NODELIST) %>%
+    summarise(USAGE = paste(USAGE, collapse = ", ")) %>%
+    tibble::deframe()
+}, error = function(e) {
+  NULL
+})
+
+# expand state.map with existing entries
+if (!is.null(squeue.map)) {
+  state.map[names(squeue.map)] <- sprintf("%s<br>%s", state.map[names(squeue.map)], squeue.map)
+}
+
 
 
 #== Grab & add CPU cores to server titles ====
 # first: check that the order of all files is the same!
 stopifnot(names(top_data_list) == names(usage.list))
-stopifnot(str_to_lower(names(queue.list)) == str_to_lower(names(usage.list)))
+stopifnot(str_to_lower(names(state.map)) == str_to_lower(names(usage.list)))
 
 # apply consistent (nicer) names
 names(usage.list)    <- annotate_server_header(df.list = usage.list)
 names(top_data_list) <- names(usage.list)
-names(queue.list)    <- names(usage.list)
+names(state.map)     <- names(usage.list)
 
 
 #== Filter and Reformat data ====
@@ -172,14 +194,14 @@ if (!is.null(fs_usage)) {
   usage.list <- c(usage.list, list("filesystem" = fs_usage))
   fs_overuse <- fs_usage %>% filter(percentage >= 95) %>% pull(type) %>% unique() %>% map_chr(~ sprintf("<span style='color:red'>!!%s!!</span>", .x)) %>% paste(collapse = "; ")
   top_data_list <- c(top_data_list, list("filesystem" = paste0(fs_overuse, sbidata)))
-  queue.list <- c(queue.list, list("filesystem" = ""))
+  state.map <- c(state.map, list("filesystem" = ""))
 }
 
 
 #== Create plot ====
 
 # Render plot
-usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data_list, queue.list = queue.list, use_type = "facet")
+usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data_list, state.map = state.map, use_type = "facet")
 
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)
