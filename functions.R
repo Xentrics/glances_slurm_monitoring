@@ -34,9 +34,9 @@ simplify_mem_number <- function(x, base = 1024, exp = 3, shift = 2) {
 annotate_server_header <- function(df.list, beautify = TRUE) {
 
   if (!beautify) {
-    map2(df.list, names(df.list), ~ sprintf("%s  [%i Core] [%i GiB Mem]", .y, .x$cpu.cpucore[[1]], round(.x$mem.total[[1]]/(1024^3))))
+    map2(df.list, names(df.list), ~ sprintf("%s  [%i CPU] [%i GiB RAM]", .y, .x$cpu.cpucore[[1]], round(.x$mem.total[[1]]/(1024^3))))
   } else {
-    map2(df.list, names(df.list), ~ sprintf("%s  [ <span style='color:#F8766D; font-weight: normal'>%i Core</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB Mem</span> ]",
+    map2(df.list, names(df.list), ~ sprintf("%s  [ <span style='color:#F8766D; font-weight: normal'>%i CPU</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB RAM</span> ]",
                                             .y,
                                             .x$cpu.cpucore[[1]],
                                             simplify_mem_number(.x$mem.total[[1]])
@@ -130,7 +130,7 @@ parse_top_data <- function(path, sep = "\t", n_max = 5, use_color_css = TRUE) {
 #' @use_type Rendering type. Either
 #' patchwork: render each plot individually & concatenate using patchwork. Quite slow, but robust against missing data.
 #' facet: render all plots as one ggplot using facet over server. Faster, but failed servers may disappear
-calc_graph_top <- function(usage.list, top_data_list, state.map, use_type) {
+calc_graph_top <- function(usage.list, top_data_list, state.map, use_type, base_size = 14) {
 
   if (!all(names(usage.list) == names(top_data_list))) stop("One or more names in top_data_list those not match names in usage.list!")
   if (!all(names(usage.list) == names(state.map))) stop("One or more names in state.map those not match names in usage.list!")
@@ -152,7 +152,7 @@ calc_graph_top <- function(usage.list, top_data_list, state.map, use_type) {
           ggtitle(name, users) +
           labs(y = "% usage", x = "ago [min]") +
           coord_cartesian() +
-          theme_bw(base_size = 14) +
+          theme_bw(base_size = base_size) +
           theme(plot.title = ggtext::element_markdown(face="bold"),
                 plot.subtitle	= ggtext::element_markdown(size = 10, face="bold"),
                 panel.grid.minor = element_blank(),
@@ -175,14 +175,14 @@ calc_graph_top <- function(usage.list, top_data_list, state.map, use_type) {
       mutate(CPU    = paste0("<span style='color:#757575'>CPU: </span> ", CPU),
              squeue = paste0("<span style='color:#757575'>SLURM: </span> ", squeue)) %>%
       mutate(Server = paste0("**", Server, "**")) %>%
-      mutate(Label = sprintf("%s<br>%s<br>%s", Server, CPU, squeue))
+      mutate(Label  = sprintf("%s<br>%s<br>%s", Server, CPU, squeue) %>% fct_inorder())
 
     # only plot if any data was loaded
     if (nrow(df) > 0) {
       df %>%
         mutate(Server = fct_inorder(Server)) %>%
         ggplot(aes(x = minute)) +
-        facet_wrap(~ Label, scales = "free_x") +
+        facet_wrap(~ Label, scales = "free_x", ncol = 6) +
         geom_path(aes(y = percentage, color = type, size = type, linetype = type)) +
         scale_color_manual(values = c("CPU" = "#F8766D", "MEM" = "#C77CFF", "load.min15" = "#00BA38", "scratch" = "#1AA7EC",
                                       "sbiarchiv" = "#1AA7EC", "sbisra" = "#CAF0F8", "sbidata" = "red", "sbiprojects" = "darkorange")) +
@@ -194,7 +194,7 @@ calc_graph_top <- function(usage.list, top_data_list, state.map, use_type) {
         scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +
         coord_cartesian() +
-        theme_bw(base_size = 20) +
+        theme_bw(base_size = base_size) +
         theme(plot.title = element_text(face="bold"),
               strip.text = ggtext::element_markdown(hjust = 0.5, margin = unit(c(0.1, 0.1, 0.1, 0.1), "lines")),
               strip.background = element_blank(),

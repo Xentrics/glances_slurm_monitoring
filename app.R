@@ -27,7 +27,7 @@ ui <-
     tags$style(
       HTML(
         "#big-heading{
-        padding-left:15px; padding-top:15px; padding-bottom:15px;
+        padding-left:15px; padding-top:5px; padding-bottom:15px;
         color: white; background: #3475b4;
         box-shadow: 2px 2px 2px 2px grey;}"
       )
@@ -35,16 +35,16 @@ ui <-
 
     # Title
     titlePanel(
-      title = h1(id="big-heading", "MBD Dev Servers", align = "center"),
+      title = h1(id="big-heading", "MBD Servers", align = "center"),
       # Application Icon (for web-browser tab)
       tags$head(tags$link(rel = "icon", type = "image/png", href = "logo_128.png"),
-                tags$title("MBD Dev Servers"))
+                tags$title("MBD Servers"))
     ),
 
     textOutput("update_text"),
 
     # Server Performance Graphs
-    plotOutput("usage_graphs", height = "80%")
+    plotOutput("usage_graphs", height = "85%")
   )
 
 
