@@ -53,7 +53,7 @@ ui <-
 #== Persistent data ----
 
 get_current_time <- function() {
-  format(Sys.time(), "%b %d %H:%M")
+  format(lubridate::with_tz(Sys.time(), "CET"), "%b %d %H:%M %Z")
 }
 
 # Create reactivate file readers that loads pre-compute ggplot objects
