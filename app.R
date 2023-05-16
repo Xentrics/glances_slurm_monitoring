@@ -26,16 +26,28 @@ ui <-
     # update title bar look
     tags$style(
       HTML(
-        "#big-heading{
-        padding-left:15px; padding-top:5px; padding-bottom:15px;
-        color: white; background: #3475b4;
-        box-shadow: 2px 2px 2px 2px grey;}"
+        "#big-heading {
+        padding: 0;
+        height: 45px;
+        line-height: 45px;
+        text-align: center;
+        color: white;
+        background: #3475b4;
+        box-shadow: 2px 2px 2px 2px grey;
+        margin: 0px;
+        margin-top: -20px;
+        }
+
+        #warning_bar {
+        margin-top: -20px;
+        margin-bottom: 10px;
+        }"
       )
     ),
 
     # Title
     titlePanel(
-      title = h1(id="big-heading", "MBD Servers", align = "center"),
+      title = h1(id="big-heading", "MBD Servers"),
       # Application Icon (for web-browser tab)
       tags$head(tags$link(rel = "icon", type = "image/png", href = "logo_128.png"),
                 tags$title("MBD Servers"))
