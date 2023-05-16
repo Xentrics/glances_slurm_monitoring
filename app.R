@@ -26,22 +26,34 @@ ui <-
     # update title bar look
     tags$style(
       HTML(
-        "#big-heading {
-        padding: 0;
-        height: 45px;
-        line-height: 45px;
-        text-align: center;
-        color: white;
-        background: #3475b4;
-        box-shadow: 2px 2px 2px 2px grey;
-        margin: 0px;
-        margin-top: -20px;
+        "
+        #big-heading {
+          padding: 0;
+          height: 45px;
+          line-height: 45px;
+          text-align: center;
+          color: white;
+          background: #3475b4;
+          box-shadow: 2px 2px 2px 2px grey;
+          margin: 0px;
+          margin-top: -20px;
+        }
+
+        @keyframes flash {
+          0% { opacity: 1; }
+          50% { opacity: 0.4; }
+          100% { opacity: 1; }
         }
 
         #warning_bar {
-        margin-top: -20px;
-        margin-bottom: 10px;
-        }"
+          margin-top: -20px;
+          margin-bottom: 10px;
+        }
+
+        #flashing-warning {
+          animation: flash 5s infinite;
+        }
+        "
       )
     ),
 
@@ -98,7 +110,7 @@ server <- function(input, output) {
     if(warning_message() == "No warnings.") {
       tags$div(id = "warning_bar", style = paste(format_str, "background-color: lightgray;"), h3("No warnings."))
     } else {
-      tags$div(id = "warning_bar", style = paste(format_str, "background-color: red; color: white;"), h3(warning_message()))
+      tags$div(id = "warning_bar", style = paste(format_str, "background-color: red; color: white;"), h3(id = "flashing-warning", warning_message()))
     }
   })
 
