@@ -53,6 +53,10 @@ ui <-
                 tags$title("MBD Servers"))
     ),
 
+    # Warning bar
+    uiOutput("warning_bar"),
+
+    # Time Update Text
     textOutput("update_text"),
 
     # Server Performance Graphs
@@ -75,6 +79,9 @@ if (!file.exists(graph_file)) stop("Graph file not found! Did you run background
 safe.readRDS <- possibly(readRDS, NULL)
 gg.graph <- reactiveFileReader(20000, NULL, filePath = graph_file, readFunc = safe.readRDS)
 
+warning_file <- file.path(getwd(), "data/warnings.rds")
+warning_message <- reactiveFileReader(20000, NULL, filePath = warning_file, readFunc = safe.readRDS)
+
 # keeps the last valid plot
 last_plot <- reactiveValues(plot = NULL)
 
@@ -82,13 +89,23 @@ last_plot <- reactiveValues(plot = NULL)
 #== Session data ----
 server <- function(input, output) {
 
-  # shows the last render update
+  # show time of the last image update
   update_text <- reactiveValues(uptext = paste("Last Update:", get_current_time()))
+
+  # render UI for warning bar
+  format_str <- "height: 32px; line-height: 32px; text-align: center; box-shadow: 2px 2px 2px 2px grey;"
+  output$warning_bar <- renderUI({
+    if(warning_message() == "No warnings.") {
+      tags$div(id = "warning_bar", style = paste(format_str, "background-color: lightgray;"), h3("No warnings."))
+    } else {
+      tags$div(id = "warning_bar", style = paste(format_str, "background-color: red; color: white;"), h3(warning_message()))
+    }
+  })
 
   # loading of data may fail (resulting in a white flash) - so we need to capture this
   # here, we safe the last rendered plot
   # if gg.graph is broken, the last rendered plot will be used instead
-  # observere is required to make the if-else clause work
+  # observe is required to make the if-else clause work
   observe({
     if (!is.null(gg.graph())) {
       output$usage_graphs <- renderPlot({

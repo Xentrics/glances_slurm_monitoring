@@ -190,10 +190,28 @@ tryCatch({
 
 # merge HPC and FS information
 if (!is.null(fs_usage)) {
-  usage.list <- c(usage.list, list("filesystem" = fs_usage))
-  fs_overuse <- fs_usage %>% filter(percentage >= 95) %>% pull(type) %>% unique() %>% map_chr(~ sprintf("<span style='color:red'>!!%s!!</span>", .x)) %>% paste(collapse = "; ")
-  top_data_list <- c(top_data_list, list("filesystem" = paste0(fs_overuse, sbidata)))
+  #
+  top_data_list <- c(top_data_list, list("filesystem" = sbidata))
   state.map <- c(state.map, list("filesystem" = ""))
+  usage.list <- c(usage.list, list("filesystem" = fs_usage))
+
+  # check for storage running full
+  storage_limit_pct <- 94
+  fs_overuse <- fs_usage %>%
+    group_by(type) %>%
+    slice_tail(n=1) %>%
+    filter(percentage >= storage_limit_pct) %>%
+    mutate(message = sprintf("/%s usage over %.2f%s", type, percentage, "%")) %>%
+    mutate(message = str_replace(message, "sbiprojects", "sbidata/projects")) %>%
+    pull(message) %>%
+    paste(collapse = "; ")
+
+  if (fs_overuse == "") fs_overuse <- "No warnings."
+
+  # only update RDS file if the message has changed since the last update
+  if (!file.exists("data/warnings.rds") || readRDS("data/warnings.rds") != fs_overuse) {
+    saveRDS(fs_overuse, "data/warnings.rds")
+  }
 }
 
 
