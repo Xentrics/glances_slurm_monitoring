@@ -172,8 +172,8 @@ calc_graph_top <- function(usage.list, top_data_list, state.map, use_type, base_
     df <- bind_rows(usage.list, .id = "Server") %>%
       left_join(top_data_list %>% map_df(~ tibble(CPU = .x), .id = "Server")) %>%
       left_join(state.map %>% map_df(~ tibble(squeue = .x), .id = "Server")) %>%
-      mutate(CPU    = paste0("<span style='color:#757575'>CPU: </span> ", CPU),
-             squeue = paste0("<span style='color:#757575'>SLURM: </span> ", squeue)) %>%
+      mutate(CPU    = if_else(Server != "filesystem", paste0("<span style='color:#757575'>CPU: </span> ", CPU), CPU),
+             squeue = if_else(Server != "filesystem", paste0("<span style='color:#757575'>SLURM: </span> ", squeue), squeue)) %>%
       mutate(Server = paste0("**", Server, "**")) %>%
       mutate(Label  = sprintf("%s<br>%s<br>%s", Server, CPU, squeue) %>% fct_inorder())
 

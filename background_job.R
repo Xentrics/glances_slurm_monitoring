@@ -128,35 +128,49 @@ names(state.map)     <- names(usage.list)
 fs_usage <- NULL
 if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
 
-# summarise /sbidata partition information
-sbidata <- tryCatch({
-  first <- usage.list[[1]] %>% slice_head(n=1) %>% select(starts_with("fs..sbidata"), -contains("projects")) %>% select(where(is.numeric))
-  last  <- usage.list[[1]] %>% slice_tail(n=1) %>% select(starts_with("fs..sbidata"), -contains("projects")) %>% select(where(is.numeric))
-  diff <- first - last
-  sbidata <- sprintf("<span style='color:blue'>sbidata</span>: <span style='color:blue'>%i</span>/<span style='color:blue'>%i Tb</span>, %s<span style='color:blue'>%.2fGb</span>",
-                     round(last$fs..sbidata.used / 1000^4), round(last$fs..sbidata.size / 1000^4),
-                     "&Delta;",
-                     diff$fs..sbidata.used / 1000^3)
-  #ggplot() + ggtitle(sbidata) + theme(plot.title = ggtext::element_markdown())
-}, error = function(e) {
-  ""
-})
+  # summarise /sbidata partition information
+  sbidata <- tryCatch({
+    first <- usage.list[[1]] %>% slice_head(n=1) %>% select(starts_with("fs..sbidata"), -contains("projects")) %>% select(where(is.numeric))
+    last  <- usage.list[[1]] %>% slice_tail(n=1) %>% select(starts_with("fs..sbidata"), -contains("projects")) %>% select(where(is.numeric))
+    diff <- first - last
+    sprintf("<span style='color:blue'>sbidata</span>: <span style='color:blue'>%i</span>/<span style='color:blue'>%i Tb</span>, %s<span style='color:blue'>%05.2fGb</span>",
+            round(last$fs..sbidata.used / 1000^4), round(last$fs..sbidata.size / 1000^4),
+            "&Delta;",
+            diff$fs..sbidata.used / 1000^3)
+  }, error = function(e) {
+    ""
+  })
 
-# parse remaining real-time file system usage
-fs_usage <- tryCatch({
-  usage.list[[1]] %>%
-    slice_tail(n = 120) %>%
-    mutate(entry = 1:nrow(.), .before = 1) %>%
-    # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
-    mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
-    select(entry, minute, matches("^fs\\.\\..*\\.percent")) %>%
-    rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
-    rename_with(~ "sbiprojects", any_of("sbidata.projects")) %>%
-    tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
-    mutate(type = factor(type, levels = c("sbidata", "sbiprojects", "sbiarchiv", "sbisra")) %>% fct_rev())
-}, except = function(e) {
-  NULL
-})
+  # summarise /sbidata/projects partition information
+  sbiprojects <- tryCatch({
+    first <- usage.list[[1]] %>% slice_head(n=1) %>% select(starts_with("fs..sbidata.projects")) %>% select(where(is.numeric))
+    last  <- usage.list[[1]] %>% slice_tail(n=1) %>% select(starts_with("fs..sbidata.projects")) %>% select(where(is.numeric))
+    diff <- first - last
+    sprintf("<span style='color:blue'>sbiproj</span>: <span style='color:blue'>%i</span>/<span style='color:blue'>%i Tb</span>, %s<span style='color:blue'>%05.2fGb</span>",
+            round(last$fs..sbidata.projects.used / 1000^4), round(last$fs..sbidata.projects.size / 1000^4),
+            "&Delta;",
+            diff$fs..sbidata.projects.used / 1000^3)
+  }, error = function(e) {
+    ""
+  })
+
+  filesystem_header <- paste0(sbidata, "<br>", sbiprojects)
+
+  # parse remaining real-time file system usage
+  fs_usage <- tryCatch({
+    usage.list[[1]] %>%
+      slice_tail(n = 120) %>%
+      mutate(entry = 1:nrow(.), .before = 1) %>%
+      # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
+      mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
+      select(entry, minute, matches("^fs\\.\\..*\\.percent")) %>%
+      rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
+      rename_with(~ "sbiprojects", any_of("sbidata.projects")) %>%
+      tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
+      mutate(type = factor(type, levels = c("sbidata", "sbiprojects", "sbiarchiv", "sbisra")) %>% fct_rev())
+  }, except = function(e) {
+    NULL
+  })
 }
 
 
@@ -191,7 +205,7 @@ tryCatch({
 # merge HPC and FS information
 if (!is.null(fs_usage)) {
   #
-  top_data_list <- c(top_data_list, list("filesystem" = sbidata))
+  top_data_list <- c(top_data_list, list("filesystem" = filesystem_header))
   state.map <- c(state.map, list("filesystem" = ""))
   usage.list <- c(usage.list, list("filesystem" = fs_usage))
 
