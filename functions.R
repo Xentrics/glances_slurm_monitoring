@@ -38,8 +38,8 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
   } else {
     map2(df.list, names(df.list), ~ sprintf("%s  [ <span style='color:#F8766D; font-weight: normal'>%i CPU</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB RAM</span> ]",
                                             .y,
-                                            .x$cpu.cpucore[[1]],
-                                            simplify_mem_number(.x$mem.total[[1]])
+                                            as.integer(.x$cpu.cpucore[[1]]),
+                                            simplify_mem_number(as.numeric(.x$mem.total[[1]]))
                                             )
          )
   }

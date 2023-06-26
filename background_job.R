@@ -28,12 +28,12 @@ message(sprintf("Servers are: %s\n", names(usage.list)))
 # Reorder Position of Server Plots
 server_order <- c('ikarus', 'daidalos', 'agaricus', 'amantia', 'russula', 'kottos', str_subset(names(usage.list), "node"))
 if (any(!names(usage.list) %in% server_order)) {
-warning("One or more servers are not in 'server_order'. Not chaning order ...")
+  warning("One or more servers are not in 'server_order'. Not chaning order ...")
 } else {
-# maybe not all servers are being watched
-server_order <- server_order[server_order %in% names(usage.list)]
-# reorder
-usage.list <- usage.list[server_order]
+  # maybe not all servers are being watched
+  server_order <- server_order[server_order %in% names(usage.list)]
+  # reorder
+  usage.list <- usage.list[server_order]
 }
 
 
@@ -47,13 +47,13 @@ shared <- intersect(names(usage.list), names(top.files))
 missing <- setdiff(names(usage.list), shared) %>% set_names(.,.)
 
 if (length(shared) > 0) {
-# load data
-top.files <- top.files[shared]
-top_data_list <- map(top.files, parse_top_data, n_max = 3)
+  # load data
+  top.files <- top.files[shared]
+  top_data_list <- map(top.files, parse_top_data, n_max = 3)
 }
 
 if (length(missing) > 0) {
-top_data_list <- c(top_data_list, map(missing, ~ "_unknown_"))
+  top_data_list <- c(top_data_list, map(missing, ~ "_unknown_"))
 }
 
 # sanity check
@@ -77,8 +77,8 @@ select(HOSTNAMES, STATE) %>% tibble::deframe()
 # add untracked ones
 missing <- names(usage.list)[!(str_to_lower(names(usage.list)) %in% names(state.map))]
 if (length(missing) > 0) {
-l <- map(missing, function(s) c("<span style='color:gray'>untracked</span>") %>% set_names(s)) %>% unlist()
-state.map <- c(state.map, l)[str_to_lower(names(usage.list))]
+  l <- map(missing, function(s) c("<span style='color:gray'>untracked</span>") %>% set_names(s)) %>% unlist()
+  state.map <- c(state.map, l)[str_to_lower(names(usage.list))]
 }
 
 
@@ -90,24 +90,24 @@ filter(NODELIST %in% susage.df$HOSTNAMES) %>%
 left_join(susage.df, by = c("NODELIST" = "HOSTNAMES"))
 
 squeue.map <- tryCatch({
-queue.df %>%
-  mutate(USAGE = annotate_squeue(STATE, USER, CPUS)) %>%
-  select(NODELIST, USER, USAGE) %>%
-  group_by(NODELIST) %>%
-  summarise(USAGE = paste(USAGE, collapse = ", ")) %>%
-  tibble::deframe()
+  queue.df %>%
+    mutate(USAGE = annotate_squeue(STATE, USER, CPUS)) %>%
+    select(NODELIST, USER, USAGE) %>%
+    group_by(NODELIST) %>%
+    summarise(USAGE = paste(USAGE, collapse = ", ")) %>%
+    tibble::deframe()
 }, error = function(e) {
-NULL
+  NULL
 })
 
 # expand state.map with existing entries
 if (!is.null(squeue.map)) {
-state.map[names(squeue.map)] <- sprintf("%s<br>%s", state.map[names(squeue.map)], squeue.map)
+  state.map[names(squeue.map)] <- sprintf("%s<br>%s", state.map[names(squeue.map)], squeue.map)
 }
 
 missing <- names(state.map)[!(names(state.map) %in% names(squeue.map))]
 if (length(missing) > 0) {
-state.map[missing] <- sprintf("%s<br> ", state.map[missing])
+  state.map[missing] <- sprintf("%s<br> ", state.map[missing])
 }
 
 
@@ -116,7 +116,24 @@ state.map[missing] <- sprintf("%s<br> ", state.map[missing])
 stopifnot(names(top_data_list) == names(usage.list))
 stopifnot(str_to_lower(names(state.map)) == str_to_lower(names(usage.list)))
 
-# apply consistent (nicer) names
+#== Add performance headers ====
+passmark_multi  <- c("EPYC 7313" = 74130, "EPYC 7742" = 105954, "EPYC 7302" = 58813, "Platinum 8160" = 74221)
+passmark_single <- c("EPYC 7313" =  2773, "EPYC 7742" =   2194, "EPYC 7302" =  2150, "Platinum 8160" =  2385)
+passmark_mem    <- c("EPYC 7313" =  3205, "EPYC 7742" =   3138, "EPYC 7302" =  2928, "Platinum 8160" =  1974)
+
+geekbench6_multi  <- c("EPYC 7313" = 14396, "EPYC 7742" = 11040, "EPYC 7302" = 13521, "Platinum 8160" = 1)
+geekbench6_single <- c("EPYC 7313" =  1704, "EPYC 7742" =  1357, "EPYC 7302" =  1345, "Platinum 8160" = 1)
+
+# singularity version
+geekbench6_multi  <- c("EPYC 7313" = 14285, "EPYC 7742" = 4500, "EPYC 7302" = 13601, "Platinum 8160" = 9332)
+geekbench6_single <- c("EPYC 7313" =  1680, "EPYC 7742" = 1328, "EPYC 7302" =  1332, "Platinum 8160" = 1263)
+
+# bench,ark for kottos is weird!
+geekbench5_multi  <- c("EPYC 7313" = 34587, "EPYC 7742" = 4659, "EPYC 7302" = 29678, "Platinum 8160" = 24563)
+geekbench5_single <- c("EPYC 7313" =  1373, "EPYC 7742" = 1077, "EPYC 7302" =  1058, "Platinum 8160" =   1032)
+
+
+#== apply consistent (nicer) names ====
 names(usage.list)    <- annotate_server_header(df.list = usage.list)
 names(top_data_list) <- names(usage.list)
 names(state.map)     <- names(usage.list)

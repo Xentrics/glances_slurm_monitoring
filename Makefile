@@ -47,7 +47,6 @@ shiny:
 	docker run -d --rm \
 		-p 4444:3838 \
 		--volume $(PROJECT_ROOT):/srv/shiny-server/glances \
-                --volume /sbidata/seelbind/lab/glances_server_perf_slurm/:/srv/shiny-server/glances_slurm \
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		shiny-verse:4.1_SBI
@@ -58,7 +57,6 @@ shinypod:
 	podman run -d --rm \
 		-p 4444:3838 \
 		--volume $(PROJECT_ROOT):/srv/shiny-server/glances \
-                --volume /sbidata/seelbind/lab/glances_server_perf_slurm/:/srv/shiny-server/glances_slurm \
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		shiny-verse:4.1_SBI
