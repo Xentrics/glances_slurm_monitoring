@@ -92,9 +92,18 @@ read.csv.whitespace <- function(path, check.names = F) {
 #' @return Character(1).
 parse_top_data <- function(path, sep = "\t", n_max = 5, use_color_css = TRUE) {
   # note: Pct is Load/#CPU
-  df <- safe.read.csv(file = path, sep = sep, header = F, col.names = c("User", "Load", "Pct"))
+  df <- read.csv(file = path, sep = sep, header = F, col.names = c("User", "Load", "Pct"))
 
   if (is.null(df)) return("_unknown_")
+
+  # shorten user-names
+  df <- if (nrow(df) < 3) {
+    df
+  } else if (nrow(df) < 5) {
+    df %>% mutate(User = str_extract(User, "^.{1,4}"))
+  } else {
+    df %>% mutate(User = str_extract(User, "^.{1,3}"))
+  }
 
   # order usage & remove users with less than 1 full core
   df.top <- df %>%
@@ -105,7 +114,7 @@ parse_top_data <- function(path, sep = "\t", n_max = 5, use_color_css = TRUE) {
     mutate(Label = if(use_color_css) {
       glue::glue("<span style='color:#F8766D'>{User}</span> [<span style='color:#00BFC4'>{Cores}</span>]")
     } else {
-      glue::glue("{User} [{Cores}]")
+      glue::glue("{User}[{Cores}]")
     })
 
   # maybe no heavy user is active

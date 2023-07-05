@@ -37,7 +37,7 @@ if (any(!names(usage.list) %in% server_order)) {
 }
 
 
-#== Add information about the strongest users ====
+#== Add information about the most heavy users ====
 top.files <- list.files(path = data_directory, pattern = "top_users", full.names = TRUE)
 names(top.files) <- top.files %>% basename() %>% str_replace("top_users\\.(.*)\\.tsv", "\\1")
 top_data_list <- list()
@@ -49,7 +49,7 @@ missing <- setdiff(names(usage.list), shared) %>% set_names(.,.)
 if (length(shared) > 0) {
   # load data
   top.files <- top.files[shared]
-  top_data_list <- map(top.files, parse_top_data, n_max = 3)
+  top_data_list <- map(top.files, parse_top_data, n_max = 5)
 }
 
 if (length(missing) > 0) {
