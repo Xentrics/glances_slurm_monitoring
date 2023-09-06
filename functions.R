@@ -96,21 +96,24 @@ parse_top_data <- function(path, sep = "\t", n_max = 5, use_color_css = TRUE) {
 
   if (is.null(df)) return("_unknown_")
 
-  # shorten user-names
-  df <- if (nrow(df) < 3) {
-    df
-  } else if (nrow(df) < 5) {
-    df %>% mutate(User = str_extract(User, "^.{1,4}"))
-  } else {
-    df %>% mutate(User = str_extract(User, "^.{1,3}"))
-  }
-
   # order usage & remove users with less than 1 full core
   df.top <- df %>%
     arrange(desc(Load)) %>%
-    filter(Load > 80) %>%
+    filter(Load > 50) %>%
     mutate(Cores = round(Load/100)) %>%
-    slice_head(n = n_max) %>%
+    slice_head(n = n_max)
+
+  # shorten user-names
+  df.top <- if (nrow(df) < 3) {
+    df.top
+  } else if (nrow(df) < 4) {
+    df.top %>% mutate(User = stringr::str_extract(User, "^.{1,3}"))
+  } else if (nrow(df) >= 4) {
+    df.top %>% mutate(User = stringr::str_extract(User, "^.{1,2}"))
+  }
+
+  # make colorful annotation
+  df.top <- df.top %>%
     mutate(Label = if(use_color_css) {
       glue::glue("<span style='color:#F8766D'>{User}</span> [<span style='color:#00BFC4'>{Cores}</span>]")
     } else {
