@@ -5,6 +5,8 @@ library(dplyr)  # For filtering and manipulating data
 library(stringr)
 library(purrr)
 library(forcats)
+library(ggtext)
+library(emojifont)
 
 #== Description====
 # This script should be run every 1 minute using cron
@@ -197,29 +199,29 @@ if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
 
 # reformat CPU, Memory, and Load information per server
 usage.list <- map(usage.list, function(df) {
-fs_scratch_names <- c("fs..sbilocal.percent", "fs..scratch.percent", "fs..scratch.percent")
-cols_of_interest <- c("cpu.total", "mem.percent", fs_scratch_names)
-tryCatch({
-  # (cpucore should stay the same across all values and not be crazy high!)
-  cpucore_ref <- median(df$cpu.cpucore[df$cpu.cpucore > 0], na.rm = T)
-  df %>%
-    slice_tail(n = 120) %>%
-    mutate(entry = 1:nrow(.), .before = 1) %>%
-    # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
-    mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
-    # compensate parsing/writing errors
-    mutate(across(c(entry, minute, any_of(cols_of_interest), cpu.cpucore), as.numeric)) %>%
-    mutate(across(any_of(cols_of_interest), ~ if_else(is.na(cpu.cpucore) | cpu.cpucore != cpucore_ref, NA_real_, .x))) %>%
-    select(entry, minute, any_of(cols_of_interest)) %>%
-    # make nicer variable names
-    rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
-    rename_with(~ "scratch", .cols = any_of(fs_scratch_names)) %>%
-    # convert to long format
-    tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
-    mutate(type = fct_inorder(type) %>% fct_rev())
-}, error = function(e) {
-  data.frame()
-})
+  fs_scratch_names <- c("fs..sbilocal.percent", "fs..scratch.percent", "fs..scratch.percent")
+  cols_of_interest <- c("cpu.total", "mem.percent", fs_scratch_names)
+  tryCatch({
+    # (cpucore should stay the same across all values and not be crazy high!)
+    cpucore_ref <- median(as.numeric(df$cpu.cpucore[df$cpu.cpucore > 0]), na.rm = T)
+    df %>%
+      slice_tail(n = 120) %>%
+      mutate(entry = 1:nrow(.), .before = 1) %>%
+      # x-labels: currently, we access resources every 30 secs, and we use the last 100 of them, so (30*100)/60
+      mutate(minute = (-30*nrow(.):1)/60, .before = 1) %>%
+      # compensate parsing/writing errors
+      mutate(across(c(entry, minute, any_of(cols_of_interest), cpu.cpucore), as.numeric)) %>%
+      mutate(across(any_of(cols_of_interest), ~ if_else(is.na(cpu.cpucore) | cpu.cpucore != cpucore_ref, NA_real_, .x))) %>%
+      select(entry, minute, any_of(cols_of_interest)) %>%
+      # make nicer variable names
+      rename("CPU" = "cpu.total", "MEM" = "mem.percent") %>%
+      rename_with(~ "scratch", .cols = any_of(fs_scratch_names)) %>%
+      # convert to long format
+      tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
+      mutate(type = fct_inorder(type) %>% fct_rev())
+  }, error = function(e) {
+    data.frame()
+  })
 })
 
 
@@ -253,7 +255,7 @@ if (!is.null(fs_usage)) {
 #== Create plot ====
 
 # Render plot
-usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data_list, state.map = state.map, use_type = "facet", base_size = 20)
+usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data_list, state.map = state.map, use_type = "facet", base_size = 18)
 
 # Save plot to drive (for later use with shiny server)
 dir.create("data", showWarnings = F)
