@@ -2,10 +2,10 @@
 # Server-Side
 */30 * * * *  /home/seelbind/scripts/start_glances_cleaner.sh
 # NOTE: do not use the -it option with CRON!
-*/1  * * * *  docker exec --user shiny -w /srv/shiny-server/glances Shiny_Glances Rscript --vanilla background_job.R
-*/1  * * * *  docker exec --user shiny -w /srv/shiny-server/glances_slurm Shiny_Glances Rscript --vanilla background_job.R
+#*/2  * * * *  podman exec -w /srv/shiny-server/glances Shiny_Glances Rscript --no-save --no-restore background_job.R
+*/2  * * * *  podman exec -w $(pwd) Shiny_Glances Rscript --no-save --no-restore background_job.R
+
 
 # Workers
-@reboot       sleep 300 && /home/seelbind/scripts/start_glances.sh
-*/2  * * * *  /home/seelbind/scripts/showCPUAllPerUser.sh | sort -k2 -nr | sed 's/ /\t/g' > /opt/ngs2/glances/top_users.$(hostname).tsv
-
+@reboot       sleep 300 && /home/seelbind/scripts/restart_glances.sh
+#*/2  * * * *  /home/seelbind/scripts/showCPUAllPerUser.sh | sort -k2 -nr | sed 's/ /\t/g' > /opt/ngs2/glances/top_users.$(hostname).tsv
