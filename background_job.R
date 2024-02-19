@@ -67,14 +67,14 @@ top_data_list <- top_data_list[names(usage.list)]
 #== Parse SLURM usage ====
 # file created using 'sinfo -N'
 susage.df <- read.csv.whitespace(path = file.path(data_directory, "susage.tsv")) %>%
-select(HOSTNAMES, STATE, `CPUS(A/I/O/T)`) %>%
-# select only nodes of interest for the current frame
-filter(HOSTNAMES %in% str_to_lower(names(usage.list))) %>%
-arrange(HOSTNAMES)
+  select(HOSTNAMES, STATE, `CPUS(A/I/O/T)`) %>%
+  # select only nodes of interest for the current frame
+  filter(HOSTNAMES %in% str_to_lower(names(usage.list))) %>%
+  arrange(HOSTNAMES)
 
 state.map <- susage.df %>%
-mutate(STATE = annotate_susage(STATE = STATE, CPUS = `CPUS(A/I/O/T)`)) %>%
-select(HOSTNAMES, STATE) %>% tibble::deframe()
+  mutate(STATE = annotate_susage(STATE = STATE, CPUS = `CPUS(A/I/O/T)`)) %>%
+  select(HOSTNAMES, STATE) %>% tibble::deframe()
 
 # add untracked ones
 missing <- names(usage.list)[!(str_to_lower(names(usage.list)) %in% names(state.map))]
@@ -87,14 +87,17 @@ if (length(missing) > 0) {
 #== Parse SLURM job queue ====
 # file created using 'squeue'
 queue.df <- read.csv.whitespace(file.path(data_directory, "squeue.tsv")) %>%
-filter(ST == "R") %>%
-filter(NODELIST %in% susage.df$HOSTNAMES) %>%
-left_join(susage.df, by = c("NODELIST" = "HOSTNAMES"))
+  select(-starts_with("...")) %>%
+  filter(ST == "R") %>%
+  filter(NODELIST %in% susage.df$HOSTNAMES) %>%
+  left_join(susage.df, by = c("NODELIST" = "HOSTNAMES"))
 
 squeue.map <- tryCatch({
   queue.df %>%
-    mutate(USAGE = annotate_squeue(STATE, USER, CPUS)) %>%
-    select(NODELIST, USER, USAGE) %>%
+    nest_by(NODELIST) %>%
+    mutate(USAGE = list(annotate_squeue(data))) %>%
+    select(NODELIST, USAGE) %>%
+    tidyr::unnest(USAGE) %>%
     group_by(NODELIST) %>%
     summarise(USAGE = paste(USAGE, collapse = ", ")) %>%
     tibble::deframe()

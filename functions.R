@@ -58,15 +58,53 @@ annotate_susage <- function(STATE, CPUS) {
 }
 
 
+
+compress_expression <- function(expr) {
+  # Split the expression into terms, accounting for both '+' and spaces
+  terms <- unlist(strsplit(expr, "\\+|\\s+"))
+
+  # Remove empty strings that might occur due to splitting
+  terms <- terms[terms != ""]
+
+  # Convert terms to numeric values
+  numeric_terms <- as.numeric(terms)
+
+  # Use table to count occurrences of each term
+  term_counts <- table(numeric_terms)[order(unique(numeric_terms))]
+
+  # Construct the compressed expression
+  compressed_terms <- paste(term_counts, "x", names(term_counts), sep = "") %>% str_remove("^1x")
+  compressed_expr <- paste(compressed_terms, collapse = "+")
+
+  return(compressed_expr)
+}
+
+
 #' Colorize QUEUE string
-annotate_squeue <- function(STATE, USER, CPUS) {
-  USER <- str_extract(USER, "^.{1,4}")
-  case_when(
-    STATE %in% c("alloc", "allocated") ~ sprintf("<span style='color:#F8766D'>*%s*</span>[<span style='color:#F8766D'>%s</span>]", USER, CPUS),
-    STATE %in% c("mixed", "mix")       ~ sprintf("<span style='color:#00BFC4'>*%s*</span>[<span style='color:#00BFC4'>%s</span>]", USER, CPUS),
-    STATE == "idle"                    ~ sprintf("<span style='color:gray'>*%s*</span>[<span style='color:gray'>%s</span>]"      , USER, CPUS),
-    TRUE                               ~ sprintf("%s [%s]", USER, CPUS)
-  )
+annotate_squeue <- function(df) {
+
+  # if many users are present, shorten each user name appropriately (down to at most 1 letter)
+  df2 <- df %>%
+    arrange(USER, -as.integer(CPUS)) %>%
+    group_by(USER) %>%
+    summarise(STATE = STATE[[1]],
+              CPUS_str = paste(CPUS, collapse = "+"),
+              CPUStot = sum(as.integer(CPUS))) %>%
+    rowwise() %>%
+    mutate(CPUS_str = compress_expression(CPUS_str)) %>%
+    arrange(-CPUStot) %>%
+    ungroup()
+
+  n_users <- nrow(df2)
+  df2 %>%
+    mutate(USER = str_extract(USER, sprintf("^.{1,%i}", max(6-n_users, 1)))) %>%
+    mutate(USAGE = case_when(
+      STATE %in% c("alloc", "allocated") ~ sprintf("<span style='color:#F8766D'>*%s*</span>[<span style='color:#F8766D'>%s</span>]", USER, CPUS_str),
+      STATE %in% c("mixed", "mix")       ~ sprintf("<span style='color:#00BFC4'>*%s*</span>[<span style='color:#00BFC4'>%s</span>]", USER, CPUS_str),
+      STATE == "idle"                    ~ sprintf("<span style='color:gray'>*%s*</span>[<span style='color:gray'>%s</span>]"      , USER, CPUS_str),
+      TRUE                               ~ sprintf("%s [%s]", USER, CPUS_str)
+    )) %>%
+    pull(USAGE)
 }
 
 
