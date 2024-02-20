@@ -51,8 +51,9 @@ annotate_susage <- function(STATE, CPUS) {
   CORES <- str_replace(CPUS, "(\\d+)/(\\d+)/(\\d+)/(\\d+)", "\\1")
   case_when(
     STATE == "idle"                    ~ sprintf("<span style='color:gray'>idle</span> [<span style='color:gray'>**%s**</span>] ", CORES),
-    STATE %in% c("alloc", "allocated") ~ sprintf("<span style='color:#F8766D'>**alloc**</span> [<span style='color:#F8766D'>**%s**</span>] ", CORES),
+    STATE %in% c("alloc", "allocated") ~ sprintf("<span style='color:#c06df8'>**alloc**</span> [<span style='color:#c06df8'>**%s**</span>] ", CORES),
     STATE %in% c("mixed", "mix")       ~ sprintf("<span style='color:#00BFC4'>**mixed**</span> [<span style='color:#00BFC4'>**%s**</span>] ", CORES),
+    STATE %in% c("drained", "down", "draining", "failing") ~ sprintf("<span style='color:#F8766D'>**%s**</span>", STATE),
     TRUE ~ STATE
   )
 }
