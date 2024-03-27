@@ -5,3 +5,5 @@
 ..Rproj
 src/R-site-library/
 data/
+*.tar
+*.tar.gz

@@ -49,7 +49,7 @@ shiny:
 		--volume $(PROJECT_ROOT):/srv/shiny-server/glances \
 		--name $(DOCKER_CONTAINER_NAME) \
 		$(DOCKER_RUN_ARGS) \
-		shiny-verse:4.1_SBI
+		localhost/shiny-verse:4.1_SBI
 
 # shiny app but started with podman
 # shiny does not allow to be run as root ... I have not found a way to change this
@@ -80,7 +80,7 @@ env:
 
 envpod:
 	podman run -d --rm \
-		-p 4040:8787 \
+		-p 4141:8787 \
 		--name $(DOCKER_ENV_NAME) \
 		$(DOCKER_RUN_ARGS) \
 		docker.io/rocker/verse:4.1 \
