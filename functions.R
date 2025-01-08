@@ -39,7 +39,7 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
     map2(df.list, names(df.list), ~ sprintf("%s  [ <span style='color:#F8766D; font-weight: normal'>%i CPU</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB RAM</span> ]",
                                             .y,
                                             as.integer(.x$cpu.cpucore[[1]]),
-                                            simplify_mem_number(as.numeric(.x$mem.total[[1]]))
+                                            simplify_mem_number(as.numeric(.x$mem.total[[1]]), shift = 0)
                                             )
          )
   }
@@ -240,7 +240,7 @@ calc_graph_top <- function(usage.list, top_data_list, state.map, use_type, base_
         scale_size_manual(values = c("CPU" = 1.25, "MEM" = 1.25, "load.min15" = 1.25, "scratch" = 0.75,
                                    "sbiarchiv" = 0.75, "sbisra" = 0.75, "sbidata" = 0.75, "sbiprojects" = 0.75)) +
         scale_linetype_manual(values = c("CPU" = 1, "MEM" = 1, "load.min15" = 1, "scratch" = 4,
-                                        "sbiarchiv" = 4, "sbisra" = 4, "sbidata" = 4, "sbiprojects" = 4)) +
+                                        "sbiarchiv" = 6, "sbisra" = 6, "sbidata" = 6, "sbiprojects" = 6)) +
         scale_x_continuous(expand = expansion(mult = c(0.015, 0.015)), n.breaks = 4) +
         scale_y_continuous(limits = c(0, 105), expand = expansion(mult = c(0.01, 0.01)), breaks = c(0, 50, 75, 100)) +
         labs(y = "% usage", x = "ago [min]") +

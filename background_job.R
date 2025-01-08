@@ -16,7 +16,7 @@ library(emojifont)
 #== Find & load glances measurement data ====
 message("Looking for server files")
 data_directory <- "/opt/ngs2/glances/"
-usage_files <- list.files(path = data_directory, pattern = "glances", full.names = TRUE)
+usage_files <- list.files(path = data_directory, pattern = "glances.*.csv", full.names = TRUE)
 
 # Read CSV files & extract server names from files
 message(sprintf("Found %i, setting up file readers", length(usage_files)))
@@ -121,25 +121,26 @@ if (length(missing) > 0) {
 stopifnot(names(top_data_list) == names(usage.list))
 stopifnot(str_to_lower(names(state.map)) == str_to_lower(names(usage.list)))
 
-#== Add performance headers ====
-# EPYC 7313 : nodesbi[01-11]
-# EPYC 7742 : Kottos
-# EPYC 7302 : Amantia, Russula, Agaricus
-# Plat 8160 : Daidalos
-passmark_multi  <- c("EPYC 7313" = 74130, "EPYC 7742" = 105954, "EPYC 7302" = 58813, "Platinum 8160" = 74221)
-passmark_single <- c("EPYC 7313" =  2773, "EPYC 7742" =   2194, "EPYC 7302" =  2150, "Platinum 8160" =  2385)
-passmark_mem    <- c("EPYC 7313" =  3205, "EPYC 7742" =   3138, "EPYC 7302" =  2928, "Platinum 8160" =  1974)
-
-geekbench6_multi  <- c("EPYC 7313" = 14396, "EPYC 7742" = 11040, "EPYC 7302" = 13521, "Platinum 8160" = 1)
-geekbench6_single <- c("EPYC 7313" =  1704, "EPYC 7742" =  1357, "EPYC 7302" =  1345, "Platinum 8160" = 1)
-
-# singularity version
-geekbench6_multi  <- c("EPYC 7313" = 14285, "EPYC 7742" = 4500, "EPYC 7302" = 13601, "Platinum 8160" = 9332)
-geekbench6_single <- c("EPYC 7313" =  1680, "EPYC 7742" = 1328, "EPYC 7302" =  1332, "Platinum 8160" = 1263)
-
-# benchmark for kottos is weird!
-geekbench5_multi  <- c("EPYC 7313" = 34587, "EPYC 7742" = 4659, "EPYC 7302" = 29678, "Platinum 8160" = 24563)
-geekbench5_single <- c("EPYC 7313" =  1373, "EPYC 7742" = 1077, "EPYC 7302" =  1058, "Platinum 8160" =  1032)
+# #== Add performance headers ====
+# # Thread 2920X: Workstations (2020)
+# # EPYC 7313 : nodesbi[01-11]
+# # EPYC 7742 : Kottos
+# # EPYC 7302 : Amantia, Russula, Agaricus
+# # Plat 8160 : Daidalos
+# passmark_multi  <- c("EPYC 7313" = 74130, "EPYC 7742" = 105954, "EPYC 7302" = 58813, "Platinum 8160" = 74221)
+# passmark_single <- c("EPYC 7313" =  2773, "EPYC 7742" =   2194, "EPYC 7302" =  2150, "Platinum 8160" =  2385)
+# passmark_mem    <- c("EPYC 7313" =  3205, "EPYC 7742" =   3138, "EPYC 7302" =  2928, "Platinum 8160" =  1974)
+#
+# geekbench6_multi  <- c("EPYC 7313" = 14396, "EPYC 7742" = 11040, "EPYC 7302" = 13521, "Platinum 8160" = 1)
+# geekbench6_single <- c("EPYC 7313" =  1704, "EPYC 7742" =  1357, "EPYC 7302" =  1345, "Platinum 8160" = 1)
+#
+# # singularity version
+# geekbench6_multi  <- c("EPYC 7313" = 14285, "EPYC 7742" = 4500, "EPYC 7302" = 13601, "Platinum 8160" = 9332, "Thread 2920x" = 7346)
+# geekbench6_single <- c("EPYC 7313" =  1680, "EPYC 7742" = 1328, "EPYC 7302" =  1332, "Platinum 8160" = 1263, "Thread 2920x" = 1053)
+#
+# # benchmark for kottos is weird!
+# geekbench5_multi  <- c("EPYC 7313" = 34587, "EPYC 7742" = 4659, "EPYC 7302" = 29678, "Platinum 8160" = 24563, "Thread 2920x" = 10674)
+# geekbench5_single <- c("EPYC 7313" =  1373, "EPYC 7742" = 1077, "EPYC 7302" =  1058, "Platinum 8160" =  1032, "Thread 2920x" = 933)
 
 
 #== apply consistent (nicer) names ====
@@ -152,7 +153,7 @@ names(state.map)     <- names(usage.list)
 
 # use one server to assess file system usage
 fs_usage <- NULL
-if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
+if (any(str_detect(colnames(usage.list[[1]]), "fs..sbidata"))) {
 
   # summarise /sbidata partition information
   sbidata <- tryCatch({
@@ -193,8 +194,9 @@ if (any(str_detect(colnames(usage.list[[1]]), "fs.."))) {
       rename_with(~ .x %>% str_remove("fs..") %>% str_remove(".percent"), .cols = starts_with("fs")) %>%
       rename_with(~ "sbiprojects", any_of("sbidata.projects")) %>%
       tidyr::pivot_longer(-c(entry, minute), names_to = "type", values_to = "percentage") %>%
-      mutate(type = factor(type, levels = c("sbidata", "sbiprojects", "sbiarchiv", "sbisra")) %>% fct_rev())
-  }, except = function(e) {
+      mutate(type = factor(type, levels = c("sbidata", "sbiprojects", "sbiarchiv", "sbisra")) %>% fct_rev()) %>%
+      filter(!is.na(type))
+  }, error = function(e) {
     NULL
   })
 }
