@@ -145,6 +145,12 @@ stopifnot(str_to_lower(names(state.map)) == str_to_lower(names(usage.list)))
 
 #== apply consistent (nicer) names ====
 names(usage.list)    <- annotate_server_header(df.list = usage.list)
+# annotated thread mode
+names(usage.list) %<>%
+  str_replace(">32 CPU<", ">32 /1 CPU<") %>%
+  str_replace(">64 CPU<", ">64 /2 CPU<") %>%
+  str_replace(">128 CPU<", ">128 /2 CPU<") %>%
+  str_replace(">256 CPU<", ">256 /2 CPU<")
 names(top_data_list) <- names(usage.list)
 names(state.map)     <- names(usage.list)
 

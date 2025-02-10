@@ -36,7 +36,7 @@ annotate_server_header <- function(df.list, beautify = TRUE) {
   if (!beautify) {
     map2(df.list, names(df.list), ~ sprintf("%s  [%i CPU] [%i GiB RAM]", .y, .x$cpu.cpucore[[1]], round(.x$mem.total[[1]]/(1024^3))))
   } else {
-    map2(df.list, names(df.list), ~ sprintf("%s  [ <span style='color:#F8766D; font-weight: normal'>%i CPU</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB RAM</span> ]",
+    map2(df.list, names(df.list), ~ sprintf("%s  [<span style='color:#F8766D; font-weight: normal'>%i CPU</span> , <span style='color:#C77CFF; font-weight: normal'>%i GiB RAM</span>]",
                                             .y,
                                             as.integer(.x$cpu.cpucore[[1]]),
                                             simplify_mem_number(as.numeric(.x$mem.total[[1]]), shift = 0)
