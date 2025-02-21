@@ -86,7 +86,7 @@ if (length(missing) > 0) {
 
 #== Parse SLURM job queue ====
 # file created using 'squeue'
-queue.df <- read.csv.whitespace(file.path(data_directory, "squeue.tsv")) %>%
+queue.df <- read.csv.whitespace(path = file.path(data_directory, "squeue.tsv")) %>%
   select(-starts_with("...")) %>%
   filter(ST == "R") %>%
   filter(NODELIST %in% susage.df$HOSTNAMES) %>%

@@ -117,6 +117,7 @@ safe.read.csv <- purrr::possibly(read.csv, otherwise = NULL)
 read.csv.whitespace <- function(path, check.names = F) {
   path %>%
     readLines() %>%
+    str_remove("^\\s+") %>%
     str_replace_all("\\s+", "\t") %>%
     read.delim(text = ., header = TRUE, check.names = check.names) %>%
     as_tibble(.name_repair = "unique")
