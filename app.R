@@ -66,12 +66,13 @@ ui <-
     ),
 
     # Warning bar
+    # usually displays storags limits or errors
     uiOutput("warning_bar"),
 
-    # Time Update Text
+    # Show last update time/date
     textOutput("update_text"),
 
-    # Server Performance Graphs
+    # Server Performance/Usage Graphs
     plotOutput("usage_graphs", height = "85%")
   )
 
@@ -94,6 +95,9 @@ gg.graph <- reactiveFileReader(20000, NULL, filePath = graph_file, readFunc = sa
 warning_file <- file.path(getwd(), "data/warnings.rds")
 warning_message <- reactiveFileReader(20000, NULL, filePath = warning_file, readFunc = safe.readRDS)
 
+error_file <- file.path(getwd(), "data/errors.rds")
+error_message <- reactiveFileReader(20000, NULL, filePath = error_file, readFunc = safe.readRDS)
+
 # keeps the last valid plot
 last_plot <- reactiveValues(plot = NULL)
 
@@ -105,13 +109,25 @@ server <- function(input, output) {
   update_text <- reactiveValues(uptext = paste("Last Update:", get_current_time()))
 
   # render UI for warning bar
+  # usually displays storags limits or errors
   format_str <- "height: 32px; line-height: 32px; text-align: center; box-shadow: 2px 2px 2px 2px grey;"
   output$warning_bar <- renderUI({
-    if(warning_message() == "No warnings.") {
-      tags$div(id = "warning_bar", style = paste(format_str, "background-color: lightgray;"), h3("No warnings."))
+
+    # If no error occured, show warnings (if present)
+    if (error_message() == "No errors.") {
+
+      if(warning_message() == "No warnings.") {
+        tags$div(id = "warning_bar", style = paste(format_str, "background-color: lightgray;"), h3("No warnings."))
+      } else {
+        tags$div(id = "warning_bar", style = paste(format_str, "background-color: red; color: white;"), h3(id = "flashing-warning", warning_message()))
+      }
+
     } else {
-      tags$div(id = "warning_bar", style = paste(format_str, "background-color: red; color: white;"), h3(id = "flashing-warning", warning_message()))
+
+      # Show errors
+      tags$div(id = "warning_bar", style = paste(format_str, "background-color: red; color: white;"), h3(id = "flashing-warning", error_message()))
     }
+
   })
 
   # loading of data may fail (resulting in a white flash) - so we need to capture this
