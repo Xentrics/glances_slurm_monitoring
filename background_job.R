@@ -211,9 +211,9 @@ run <- function() {
   }
 
 
-  # reformat CPU, Memory, and Load information per server
+  # reformat CPU, Memory, Load, and scratch information per server
   usage.list <- map(usage.list, function(df) {
-    fs_scratch_names <- c("fs..sbilocal.percent", "fs..scratch.percent", "fs..scratch.percent")
+    fs_scratch_names <- c("fs..sbilocal.percent", "fs..scratch.percent", "fs..raid.percent")
     cols_of_interest <- c("cpu.total", "mem.percent", fs_scratch_names)
     tryCatch({
       # (cpucore should stay the same across all values and not be crazy high!)
