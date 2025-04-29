@@ -14,6 +14,7 @@ library(emojifont)
 
 
 run <- function() {
+
   #== Find & load glances measurement data ====
   message("Looking for server files")
   data_directory <- "/opt/ngs2/glances/"
@@ -242,9 +243,9 @@ run <- function() {
   # merge HPC and FS information
   if (!is.null(fs_usage)) {
     #
-    top_data_list <- c(top_data_list, list("filesystem" = filesystem_header))
-    state.map <- c(state.map, list("filesystem" = ""))
-    usage.list <- c(usage.list, list("filesystem" = fs_usage))
+    top_data_list <- c(list("filesystem" = filesystem_header), top_data_list)
+    state.map <- c(list("filesystem" = ""), state.map)
+    usage.list <- c(list("filesystem" = fs_usage), usage.list)
 
     # check for storage running full
     storage_limit_pct <- 94
@@ -271,6 +272,12 @@ run <- function() {
 
 
   #== Create plot ====
+
+  # ignore ikarus cpu stats
+  usage.list <- discard(usage.list, str_detect(names(usage.list), "ikarus"))
+  top_data_list <- discard(top_data_list, str_detect(names(top_data_list), "ikarus"))
+  state.map <- discard(state.map, str_detect(names(state.map), "ikarus"))
+
 
   # Render plot
   usage_graphs <- calc_graph_top(usage.list = usage.list, top_data_list = top_data_list, state.map = state.map, use_type = "facet", base_size = 18)
