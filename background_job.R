@@ -32,7 +32,7 @@ run <- function() {
 
 
   # Reorder Position of Server Plots
-  server_order <- c('ikarus', 'daidalos', 'agaricus', 'amantia', 'russula', 'kottos', str_subset(names(usage.list), "node"))
+  server_order <- c('ikarus', 'daidalos', 'agaricus', 'amantia', 'russula', 'nodesbi12', str_subset(names(usage.list), "nodeSBI"), 'kottos')
   if (any(!names(usage.list) %in% server_order)) {
     warning("One or more servers are not in 'server_order'. Not chaning order ...")
   } else {
