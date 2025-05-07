@@ -94,6 +94,7 @@ run <- function() {
     select(-starts_with("...")) %>%
     filter(ST == "R") %>%
     filter(NODELIST %in% susage.df$HOSTNAMES) %>%
+    mutate(NODELIST = as.character(NODELIST)) %>%
     left_join(susage.df, by = c("NODELIST" = "HOSTNAMES"))
 
   squeue.map <- tryCatch({
