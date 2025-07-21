@@ -13,8 +13,6 @@ SOURCE_DIR := $(shell realpath $(shell pwd))/src
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 
-# external server port used to access rstudio-server
-DOCKER_ENV_PORT := 16930
 # set a custom name for the running container
 DOCKER_CONTAINER_NAME := Shiny_Glances
 DOCKER_ENV_NAME := Shiny_Glances_Env
@@ -75,7 +73,7 @@ env:
 		$(DOCKER_RUN_ARGS_ENV) \
 		rocker/verse:4.1 \
 		/init && \
-		echo SUCCESS: Interactive analysis container $(DOCKER_CONTAINER_NAME) started at http://$(shell hostname):$(DOCKER_ENV_PORT)
+		echo SUCCESS: Interactive analysis container $(DOCKER_CONTAINER_NAME) started at http://$(shell hostname):4040
 
 
 envpod:
