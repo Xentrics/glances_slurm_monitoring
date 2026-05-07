@@ -1,14 +1,33 @@
 ![](www/logo_128.png)
 # Glances_Server_Perf
 
-- Visualize server performance using Glances and Shiny
+- Visualize server performance measured by Glances using R Shiny
 
 
 ## Usage
-- **make env**   : starts an RStudio web-server for interactive editing on **port 16930**
+
+### Docker Compose (Recommended)
+
+```bash
+# Start RStudio server for interactive editing (port 4040)
+# Start Shiny server (port 4444)
+docker compose up -d
+
+# Stop services
+docker compose down
+```
+
+### Make (Legacy)
+
+- **make env**   : starts an RStudio web-server for interactive editing on **port 4040**
 - **make shiny** : starts a shiny web-server that listens on **port 4444**
-- **<server>:4444/glances shows** the main SBI working servers
+
+
+### Access
+
+- **<server>:4444/glances** shows the main SBI working servers
 - **<server>:4444/glances_slurm** shows the SLURM servers
+- **<server>:4040** RStudio Server (user: rstudio, password: tesseract)
 
 
 ## Notes
