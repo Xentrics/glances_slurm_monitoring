@@ -2,6 +2,7 @@ services:
   env:
     container_name: Shiny_Glances_Env
     image: rocker/verse:4.1
+    restart: unless-stopped
     ports:
       - "4040:8787"
     volumes:
@@ -20,6 +21,7 @@ services:
   shiny:
     container_name: Shiny_Glances
     image: localhost/shiny-verse:4.1_SBI
+    restart: unless-stopped
     ports:
       - "4444:3838"
     volumes:
