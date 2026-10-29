@@ -3,6 +3,9 @@
 
 - Visualize server performance measured by Glances using R Shiny
 
+## Example Output
+
+<img src="www/example.png" width="25%">
 
 ## Usage
 
