@@ -30,7 +30,7 @@ docker compose down
 
 - **<server>:4444/glances** shows the main SBI working servers
 - **<server>:4444/glances_slurm** shows the SLURM servers
-- **<server>:4040** RStudio Server (user: rstudio, password: tesseract)
+- **<server>:4040** RStudio Server
 
 
 ## Notes
